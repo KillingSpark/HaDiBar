@@ -14,12 +14,13 @@ import (
 
 //BeverageController : Controller for the Beverages
 type BeverageController struct {
-	service services.BeverageService
+	service services.IBeverageService
 }
 
 func MakeBeverageController() BeverageController {
 	var bc BeverageController
-	bc.service = services.MakeBeverageService()
+	s := services.MakeSQLiteBeverageService()
+	bc.service = &s //needed this indirection because the Methods are defined for pointers
 	return bc
 }
 
