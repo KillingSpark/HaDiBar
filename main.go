@@ -5,7 +5,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/killingspark/beverages/controllers"
+	"github.com/killingspark/HaDiBar/controllers"
 )
 
 func makeBeverageRoutes(router *httprouter.Router, bc controllers.BeverageController) {

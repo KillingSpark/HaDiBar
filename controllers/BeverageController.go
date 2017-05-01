@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/killingspark/beverages/services"
+	"github.com/killingspark/HaDiBar/services"
 )
 
 //BeverageController : Controller for the Beverages

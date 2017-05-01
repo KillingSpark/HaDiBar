@@ -1,6 +1,6 @@
 package services
 
-import "github.com/killingspark/beverages/models"
+import "github.com/killingspark/HaDiBar/models"
 
 //IBeverageService is the interface needed to interact with beverages
 type IBeverageService interface {

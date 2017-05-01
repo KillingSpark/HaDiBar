@@ -5,7 +5,7 @@ import (
 
 	"time"
 
-	"github.com/killingspark/beverages/models"
+	"github.com/killingspark/HaDiBar/models"
 	_ "github.com/mattn/go-sqlite3" //sqlite driver
 )
 

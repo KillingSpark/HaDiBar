@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/killingspark/beverages/models"
+	"github.com/killingspark/HaDiBar/models"
 )
 
 //SimpleBeverageService is used for persistence management for Beverages

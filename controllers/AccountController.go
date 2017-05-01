@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/killingspark/beverages/services"
+	"github.com/killingspark/HaDiBar/services"
 )
 
 //AccountController is the controller for accounts

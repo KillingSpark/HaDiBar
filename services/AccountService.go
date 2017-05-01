@@ -1,6 +1,6 @@
 package services
 
-import "github.com/killingspark/beverages/models"
+import "github.com/killingspark/HaDiBar/models"
 
 //AccountService is a service for accessing accounts
 type AccountService struct {
