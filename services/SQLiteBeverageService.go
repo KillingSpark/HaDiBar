@@ -3,18 +3,18 @@ package services
 import (
 	"database/sql"
 
-	//sqlite driver
-
 	"time"
 
 	"github.com/killingspark/beverages/models"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3" //sqlite driver
 )
 
+//SQLiteBeverageService handles the persistence of beverages for us
 type SQLiteBeverageService struct {
 	*sql.DB
 }
 
+//MakeSQLiteBeverageService creates a new SQLiteService and initialises the database
 func MakeSQLiteBeverageService() SQLiteBeverageService {
 	db, err := sql.Open("sqlite3", "beverages.db")
 
@@ -31,6 +31,7 @@ func MakeSQLiteBeverageService() SQLiteBeverageService {
 	return sqlbs
 }
 
+//GetBeverages returns all existing beverages
 func (service *SQLiteBeverageService) GetBeverages() []models.Beverage {
 	rows, err := service.Query("SELECT * FROM beverages")
 	if err != nil {
@@ -51,6 +52,7 @@ func (service *SQLiteBeverageService) GetBeverages() []models.Beverage {
 	return bevs
 }
 
+//GetBeverage returns the identified beverage
 func (service *SQLiteBeverageService) GetBeverage(aID int64) (models.Beverage, bool) {
 	var bev models.Beverage
 	err := service.QueryRow("").Scan(&bev.ID, &bev.Name, &bev.Value)
@@ -61,6 +63,7 @@ func (service *SQLiteBeverageService) GetBeverage(aID int64) (models.Beverage, b
 	return bev, true
 }
 
+//NewBeverage creates a new beverage and stores it in the database
 func (service *SQLiteBeverageService) NewBeverage(aName string, aValue int) (models.Beverage, bool) {
 	bev := models.Beverage{ID: time.Now().UnixNano(), Name: aName, Value: aValue}
 	_, err := service.Exec("INSERT INTO beverages VALUES (?,?,?)", bev.ID, bev.Name, bev.Value)
@@ -71,6 +74,7 @@ func (service *SQLiteBeverageService) NewBeverage(aName string, aValue int) (mod
 	return bev, true
 }
 
+//UpdateBeverage updates the data for the identified beverage (eg name and value)
 func (service *SQLiteBeverageService) UpdateBeverage(aID int64, aName string, aValue int) (models.Beverage, bool) {
 	_, err := service.Exec("UPDATE beverages SET Name = ?, Value = ? WHERE ID = ?", aName, aValue, aID)
 	bev := models.Beverage{ID: aID, Name: aName, Value: aValue}
@@ -80,6 +84,7 @@ func (service *SQLiteBeverageService) UpdateBeverage(aID int64, aName string, aV
 	return bev, true
 }
 
+//DeleteBeverage deletes the identified beverage
 func (service *SQLiteBeverageService) DeleteBeverage(aID int64) bool {
 	_, err := service.Exec("DELETE FROM beverages WHERE ID = ?", aID)
 	if err != nil {

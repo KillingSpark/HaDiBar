@@ -2,10 +2,12 @@ package services
 
 import "github.com/killingspark/beverages/models"
 
+//AccountService is a service for accessing accounts
 type AccountService struct {
 	accounts []models.Account
 }
 
+//MakeAccountService creates a AccountService and initialzes the Data
 func MakeAccountService() AccountService {
 	var acs AccountService
 	var acc models.Account
@@ -16,15 +18,18 @@ func MakeAccountService() AccountService {
 	return acs
 }
 
-func (this *AccountService) GetAccounts() []models.Account {
-	return this.accounts
+//GetAccounts returns all accounts
+func (service *AccountService) GetAccounts() []models.Account {
+	return service.accounts
 }
 
-func (this *AccountService) GetAccount(aID int64) models.Account {
-	return this.accounts[aID]
+//GetAccount returns the account indentified by accounts/:id
+func (service *AccountService) GetAccount(aID int64) models.Account {
+	return service.accounts[aID]
 }
 
-func (this *AccountService) UpdateAccount(aID int64, aValue int) (models.Account, bool) {
-	this.accounts[aID].Value += aValue
-	return this.accounts[aID], true
+//UpdateAccount updates the account with the difference and returns the new account
+func (service *AccountService) UpdateAccount(aID int64, aValue int) (models.Account, bool) {
+	service.accounts[aID].Value += aValue
+	return service.accounts[aID], true
 }

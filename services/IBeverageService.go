@@ -2,6 +2,7 @@ package services
 
 import "github.com/killingspark/beverages/models"
 
+//IBeverageService is the interface needed to interact with beverages
 type IBeverageService interface {
 	GetBeverages() []models.Beverage
 	GetBeverage(aID int64) (models.Beverage, bool)
