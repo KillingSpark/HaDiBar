@@ -22,12 +22,18 @@ func makeAccountRoutes(router *httprouter.Router, ac controllers.AccountControll
 	router.POST("/account/:id", ac.UpdateAccount)
 }
 
+func makeLoginRoutes(router *httprouter.Router, lc controllers.LoginController) {
+	router.GET("/login/token", lc.NewTokenWithCredentials)
+}
+
 func main() {
 	router := httprouter.New()
 	bc := controllers.MakeBeverageController()
 	ac := controllers.MakeAccountController()
+	lc := controllers.MakeLoginController()
 
 	makeBeverageRoutes(router, bc)
 	makeAccountRoutes(router, ac)
+	makeLoginRoutes(router, lc)
 	http.ListenAndServe(":8080", router)
 }

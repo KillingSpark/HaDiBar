@@ -1,0 +1,70 @@
+package services
+
+import (
+	"time"
+
+	"strconv"
+
+	"github.com/killingspark/HaDiBar/models"
+)
+
+type token struct {
+	value      string
+	expiredate int64
+}
+
+//creates new token with an expiredate of now + 24h
+func makeToken(value string) token {
+	return token{value: value, expiredate: time.Now().UnixNano() + 24*60*60*1000*1000}
+}
+
+//LoginService handles all operations connected to identification
+type LoginService struct {
+	tokenmap map[string]models.Entity
+	tokens   []token
+}
+
+//GetEntityFromToken returns the entity that belongs to the token. If the token is invalid/expired the boolean
+//is going to be false
+func (service *LoginService) GetEntityFromToken(tokenval string) (models.Entity, bool) {
+
+	_, ok := service.lookUpToken(tokenval)
+	if !ok {
+		return models.Entity{}, false
+	}
+
+	ent := service.tokenmap[tokenval]
+
+	if &ent == nil {
+
+	}
+
+	return ent, true
+}
+
+//lookup if the token is known to the server
+func (service *LoginService) lookUpToken(tokenval string) (token, bool) {
+	for index, tk := range service.tokens {
+		if tk.expiredate >= time.Now().UnixNano() {
+			//delete expired tokens
+			service.tokens = append(service.tokens[:index], service.tokens[index+1:]...)
+			continue
+		}
+		if tk.value == tokenval {
+			return tk, true
+		}
+	}
+	return token{}, false
+}
+
+//RequestToken returns a token for the credentials
+func (service *LoginService) RequestToken(name, password string) (string, bool) {
+	var tokenstring = strconv.FormatInt(time.Now().UnixNano(), 10)
+	if name == "admin" {
+		tokenstring = "admin" + tokenstring
+	}
+
+	service.tokens = append(service.tokens, makeToken(tokenstring))
+
+	return tokenstring, true
+}
