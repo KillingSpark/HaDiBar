@@ -28,6 +28,10 @@ func makeLoginRoutes(router *httprouter.Router, lc controllers.LoginController) 
 
 func main() {
 	router := httprouter.New()
+
+	//app ist unter /app erreichbar und served das build verzeichnis von react
+	router.ServeFiles("/app/*filepath", http.Dir("static/hadibar/build"))
+
 	bc := controllers.MakeBeverageController()
 	ac := controllers.MakeAccountController()
 	lc := controllers.MakeLoginController()
