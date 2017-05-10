@@ -1,3 +1,5 @@
 Goal is to manage the accountings for our beverages on our floor of a dorm conveniently
 
-Build the webapp with npm run build. The package.json specifies /app as route for the webapp for a reason!
+Webapp with Vuejs, Jquery and Bootstrap
+Database for the beverages is sqlite3
+Accounts will be handled by other project that isnt currently existing (link will be here)
