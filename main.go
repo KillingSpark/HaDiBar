@@ -30,7 +30,10 @@ func main() {
 	router := httprouter.New()
 
 	//app ist unter /app erreichbar und served das build verzeichnis von react
-	router.ServeFiles("/app/*filepath", http.Dir("static/hadibar/build"))
+	router.ServeFiles("/app/*filepath", http.Dir("app"))
+	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		http.Redirect(w, r, "/app", 300)
+	})
 
 	bc := controllers.MakeBeverageController()
 	ac := controllers.MakeAccountController()
