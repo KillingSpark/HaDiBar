@@ -5,6 +5,14 @@ div.tab {
 }
 div.tab button {
     float: left;
+}  
+.danger{
+    background-color: #ffbcbc;
+}
+.success{
+    background-color: #bcffbc;
+}
+button {
     border: none;
     outline: none;
     cursor: pointer;

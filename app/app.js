@@ -1,6 +1,6 @@
 Vue.component('acc-option', {
   props: ['account', 'selected'],
-  template: `<option v-on:click="selected(account)"> {{account.name}} </option>`
+  template: `<option v-on:click="selected(account)"> {{account.Owner.Name}} </option>`
 })
 
 Vue.component('acc-select', {
@@ -18,7 +18,7 @@ Vue.component('bev-table', {
     }
   },
   props: ['beverages', 'exec'],
-  template: 
+  template:
   ` <div>
       <div class="row">
         <table id="bev_table" class="table-bordered table-hover col-md-3">
@@ -31,8 +31,8 @@ Vue.component('bev-table', {
             </thead>
             <tbody>
                 <tr v-for="(bev, index) in beverages" v-bind:bev="bev">
-                    <td>{{bev.name}}</td>
-                    <td>{{bev.value}}</td>
+                    <td>{{bev.Name}}</td>
+                    <td>{{bev.Value}}</td>
                     <td><input v-model="beverages[index].times" type="text" style="width: 100%" /></td>
                 </tr>
             </tbody>
@@ -51,6 +51,11 @@ Vue.component('acc-info-table', {
       difference: 0
     }
   },
+  computed: {
+    isNegativ: function () {
+      return Number(this.account.Value) < 0
+    }
+  },
   props: ['account', 'show_payment'],
   template: `
     <div>
@@ -63,8 +68,8 @@ Vue.component('acc-info-table', {
           </thead>
           <tbody>
               <tr>
-                  <td>{{account.name}}</td>
-                  <td>{{account.value}}</td>
+                  <td>{{account.Owner.Name}}</td>
+                  <td v-bind:class="{danger: isNegativ, success: !isNegativ}">{{account.Value}}</td>
               </tr>
           </tbody>
       </table>
@@ -76,43 +81,23 @@ Vue.component('acc-info-table', {
   `,
   methods: {
     make_payment: function () {
-      this.account.value = Number(this.account.value) + Number(this.difference)
+      this.account.Value = Number(this.account.Value) + Number(this.difference)
     }
   }
 })
 
-new Vue({
+var bevapp = new Vue({
   el: '#bev-table',
   data: {
-    current_account: { name: "--" },
+    current_account: {
+      Owner: {
+        Name: "---",
+      }, Value: 0
+    },
     show_table: true,
     show_payment: false,
-    beverages: [
-      {
-        name: "Bier",
-        value: 1,
-        times: 0
-      },
-      {
-        name: "Cola",
-        value: 2,
-        times: 0
-      }
-    ],
-    accounts: [
-      {
-        name: "Moritz",
-        value: 1337
-      },
-      {
-        name: "Paul",
-        value: 1337
-      },
-      {
-        name: "Chris",
-        value: 1337
-      }
-    ]
+    beverages: [],
+    accounts: []
   },
   computed: {
     bev_table: function (e) {
@@ -129,7 +114,7 @@ new Vue({
     },
     openApp: function (event, app_name) {
       var tabs = document.getElementsByClassName('tablink')
-      for(var i = 0; i < tabs.length; i++){
+      for (var i = 0; i < tabs.length; i++) {
         tabs[i].classList.remove('active')
       }
       event.currentTarget.classList.add('active')
@@ -144,3 +129,19 @@ new Vue({
     }
   }
 })
+
+function getBeverages(app) {
+  $.get("/beverages", {}, function (response) {
+    app.beverages = JSON.parse(response)
+  })
+}
+
+function getAccounts(app) {
+  $.get("/accounts", {}, function (response) {
+    app.accounts = JSON.parse(response)
+  })
+}
+
+getBeverages(bevapp)
+getAccounts(bevapp)
+
