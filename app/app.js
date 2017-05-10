@@ -18,25 +18,29 @@ Vue.component('bev-table', {
     }
   },
   props: ['beverages', 'exec'],
-  template: `
-    <div class="row">
-      <table id="bev_table" class="table-bordered table-hover col-md-12">
-          <thead>
-              <tr>
-                  <th>Name</th>
-                  <th>Value</th>
-                  <th>Times</th>
-              </tr>
-          </thead>
-          <tbody>
-              <tr v-for="(bev, index) in beverages" v-bind:bev="bev">
-                  <td>{{bev.name}}</td>
-                  <td>{{bev.value}}</td>
-                  <td><input v-model="beverages[index].times" type="text" style="width: 100%" /></td>
-              </tr>
-          </tbody>
-      </table>
-      <button v-on:click="exec">Execute</button>
+  template: 
+  ` <div>
+      <div class="row">
+        <table id="bev_table" class="table-bordered table-hover col-md-3">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th>Times</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(bev, index) in beverages" v-bind:bev="bev">
+                    <td>{{bev.name}}</td>
+                    <td>{{bev.value}}</td>
+                    <td><input v-model="beverages[index].times" type="text" style="width: 100%" /></td>
+                </tr>
+            </tbody>
+        </table>
+      </div>
+      <div class="row">
+        <button v-on:click="exec">Execute</button>
+      </div>
     </div>
     `
 })

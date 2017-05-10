@@ -12,15 +12,13 @@
 <body>
     <div id="bev-table" class="container-fluid tabcontent">
         <div class="tab row">
-            <button class="col-md-6 tablink" v-on:click="openApp($event, 'bev-table')">Beverages</button>
+            <button class="col-md-6 tablink  active" v-on:click="openApp($event, 'bev-table')">Beverages</button>
             <button class="col-md-6 tablink" v-on:click="openApp($event, 'direct-payment')">Direct</button>
         </div>
         <div>
             <div class="row">
                 <acc-select v-bind:accs="accounts" v-bind:selected="acc_selected" class="col-md-1"></acc-select>
-            </div>
-            <div class="row">
-                <acc-info-table v-bind:show_payment="show_payment" v-bind:account="current_account"></acc-info-table>
+                <acc-info-table class="col-md-11" v-bind:show_payment="show_payment" v-bind:account="current_account"></acc-info-table>
             </div>
             <br>
             <br>
