@@ -1,6 +1,7 @@
 package services
 
 import "github.com/killingspark/HaDiBar/models"
+import "strconv"
 
 //AccountService is a service for accessing accounts
 type AccountService struct {
@@ -10,11 +11,11 @@ type AccountService struct {
 //MakeAccountService creates a AccountService and initialzes the Data
 func MakeAccountService() AccountService {
 	var acs AccountService
-	var acc models.Account
-	acc.ID = 0
-	acc.Owner = models.Entity{ID: 1337, Name: "Moritz"}
-	acc.Value = 4242
-	acs.accounts = append(acs.accounts, acc)
+
+	for i := 0; i < 10; i++ {
+		acc := models.Account{ID: int64(i), Owner: models.Entity{ID: int64(1337 + i), Name: "Moritz" + strconv.Itoa(i)}, Value: 4242}
+		acs.accounts = append(acs.accounts, acc)
+	}
 	return acs
 }
 

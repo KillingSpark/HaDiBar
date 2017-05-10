@@ -5,6 +5,8 @@ import (
 
 	"time"
 
+	"strconv"
+
 	"github.com/killingspark/HaDiBar/models"
 	_ "github.com/mattn/go-sqlite3" //sqlite driver
 )
@@ -53,9 +55,9 @@ func (service *SQLiteBeverageService) GetBeverages() []models.Beverage {
 }
 
 //GetBeverage returns the identified beverage
-func (service *SQLiteBeverageService) GetBeverage(aID int64) (models.Beverage, bool) {
+func (service *SQLiteBeverageService) GetBeverage(aID string) (models.Beverage, bool) {
 	var bev models.Beverage
-	err := service.QueryRow("").Scan(&bev.ID, &bev.Name, &bev.Value)
+	err := service.QueryRow("SELECT * FROM beverages WHERE ID LIKE ?", aID).Scan(&bev.ID, &bev.Name, &bev.Value)
 	if err != nil {
 		return bev, false
 	}
@@ -65,7 +67,7 @@ func (service *SQLiteBeverageService) GetBeverage(aID int64) (models.Beverage, b
 
 //NewBeverage creates a new beverage and stores it in the database
 func (service *SQLiteBeverageService) NewBeverage(aName string, aValue int) (models.Beverage, bool) {
-	bev := models.Beverage{ID: time.Now().UnixNano(), Name: aName, Value: aValue}
+	bev := models.Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue}
 	_, err := service.Exec("INSERT INTO beverages VALUES (?,?,?)", bev.ID, bev.Name, bev.Value)
 	if err != nil {
 		return bev, false
@@ -75,7 +77,7 @@ func (service *SQLiteBeverageService) NewBeverage(aName string, aValue int) (mod
 }
 
 //UpdateBeverage updates the data for the identified beverage (eg name and value)
-func (service *SQLiteBeverageService) UpdateBeverage(aID int64, aName string, aValue int) (models.Beverage, bool) {
+func (service *SQLiteBeverageService) UpdateBeverage(aID string, aName string, aValue int) (models.Beverage, bool) {
 	_, err := service.Exec("UPDATE beverages SET Name = ?, Value = ? WHERE ID = ?", aName, aValue, aID)
 	bev := models.Beverage{ID: aID, Name: aName, Value: aValue}
 	if err != nil {
@@ -85,7 +87,7 @@ func (service *SQLiteBeverageService) UpdateBeverage(aID int64, aName string, aV
 }
 
 //DeleteBeverage deletes the identified beverage
-func (service *SQLiteBeverageService) DeleteBeverage(aID int64) bool {
+func (service *SQLiteBeverageService) DeleteBeverage(aID string) bool {
 	_, err := service.Exec("DELETE FROM beverages WHERE ID = ?", aID)
 	if err != nil {
 		return false

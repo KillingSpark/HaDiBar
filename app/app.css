@@ -5,12 +5,21 @@ div.tab {
 }
 div.tab button {
     float: left;
-}  
+}
+td.center{
+    text-align: center;
+}
+th{
+    background-color: #ccc; 
+}
 .danger{
     background-color: #ffbcbc;
 }
 .success{
     background-color: #bcffbc;
+}
+input{
+    border: 1px solid #ccc;
 }
 button {
     border: none;

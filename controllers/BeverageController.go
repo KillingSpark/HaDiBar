@@ -33,13 +33,9 @@ func (controller *BeverageController) GetBeverages(w http.ResponseWriter, r *htt
 
 //GetBeverage responds with the beverage identified by beverage/:id
 func (controller *BeverageController) GetBeverage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	ID, err := strconv.Atoi(ps.ByName("id"))
+	ID := ps.ByName("id")
 
-	if err != nil {
-		fmt.Fprint(w, "NOPE")
-	}
-
-	bev, ok := controller.service.GetBeverage(int64(ID))
+	bev, ok := controller.service.GetBeverage(ID)
 	if ok {
 		enc, _ := json.Marshal(bev)
 		fmt.Fprint(w, string(enc))
@@ -59,34 +55,20 @@ func (controller *BeverageController) NewBeverage(w http.ResponseWriter, r *http
 
 //UpdateBeverage updates the beverage identified by /beverage/:id with the given form-values "value" and "name" and returns it
 func (controller *BeverageController) UpdateBeverage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	ID, err := strconv.Atoi(ps.ByName("id"))
+	ID := ps.ByName("id")
 
-	if err != nil {
-		fmt.Fprint(w, "NOPE")
-	}
-	if err != nil {
-		fmt.Fprint(w, "NOPE")
-		return
-	}
 	nv, _ := strconv.Atoi(r.FormValue("value"))
 	nn := r.FormValue("name")
-	nb, _ := controller.service.UpdateBeverage(int64(ID), nn, nv)
+	nb, _ := controller.service.UpdateBeverage(ID, nn, nv)
 	enc, _ := json.Marshal(nb)
 	fmt.Fprint(w, string(enc))
 }
 
 //DeleteBeverage deletes the beverage identified by /beverage/:id and responds with a YEP/NOPE
 func (controller *BeverageController) DeleteBeverage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	ID, err := strconv.Atoi(ps.ByName("id"))
+	ID := ps.ByName("id")
 
-	if err != nil {
-		fmt.Fprint(w, "NOPE")
-	}
-	if err != nil {
-		fmt.Fprint(w, "NOPE")
-		return
-	}
-	if controller.service.DeleteBeverage(int64(ID)) {
+	if controller.service.DeleteBeverage(ID) {
 		fmt.Fprint(w, "YEP")
 	} else {
 		fmt.Fprint(w, "NOPE")

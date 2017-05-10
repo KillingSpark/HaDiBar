@@ -18,8 +18,7 @@
         </div>
         <div>
             <div class="row">
-                <acc-select v-bind:accs="accounts" v-bind:selected="acc_selected" class="col-md-1"></acc-select>
-                <acc-info-table class="col-md-11" v-bind:show_payment="show_payment" v-bind:account="current_account"></acc-info-table>
+                <acc-info-table v-bind:accs="accounts" v-bind:selected="acc_selected" v-bind:show_payment="show_payment" v-bind:account="current_account"></acc-info-table>
             </div>
             <br>
             <br>
