@@ -14,7 +14,7 @@ import (
 
 //BeverageController : Controller for the Beverages
 type BeverageController struct {
-	service services.IBeverageService
+	service *services.SQLiteBeverageService
 }
 
 //MakeBeverageController creates a new BeverageController and initializes its service
