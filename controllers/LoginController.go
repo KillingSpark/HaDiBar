@@ -29,5 +29,5 @@ func (controller *LoginController) NewTokenWithCredentials(w http.ResponseWriter
 		fmt.Fprint(w, "NOPE")
 	}
 
-	fmt.Fprint(w, tk)
+	fmt.Fprint(w, "\""+tk+"\"")
 }

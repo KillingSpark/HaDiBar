@@ -8,18 +8,32 @@ import (
 	"github.com/killingspark/HaDiBar/controllers"
 )
 
+func checkIdentity(h httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		token := r.FormValue("token")
+
+		if token != "" {
+			h(w, r, ps)
+		} else {
+			// Request Basic Authentication otherwise
+			w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		}
+	}
+}
+
 func makeBeverageRoutes(router *httprouter.Router, bc controllers.BeverageController) {
-	router.GET("/beverages", bc.GetBeverages)
-	router.GET("/beverage/:id", bc.GetBeverage)
-	router.POST("/beverage/:id", bc.UpdateBeverage)
-	router.DELETE("/beverage/:id", bc.DeleteBeverage)
-	router.PUT("/newbeverage", bc.NewBeverage)
+	router.GET("/beverages", checkIdentity(bc.GetBeverages))
+	router.GET("/beverage/:id", checkIdentity(bc.GetBeverage))
+	router.POST("/beverage/:id", checkIdentity(bc.UpdateBeverage))
+	router.DELETE("/beverage/:id", checkIdentity(bc.DeleteBeverage))
+	router.PUT("/newbeverage", checkIdentity(bc.NewBeverage))
 }
 
 func makeAccountRoutes(router *httprouter.Router, ac controllers.AccountController) {
-	router.GET("/accounts", ac.GetAccounts)
-	router.GET("/account/:id", ac.GetAccount)
-	router.POST("/account/:id", ac.UpdateAccount)
+	router.GET("/accounts", checkIdentity(ac.GetAccounts))
+	router.GET("/account/:id", checkIdentity(ac.GetAccount))
+	router.POST("/account/:id", checkIdentity(ac.UpdateAccount))
 }
 
 func makeLoginRoutes(router *httprouter.Router, lc controllers.LoginController) {

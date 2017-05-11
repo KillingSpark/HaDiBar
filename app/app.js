@@ -3,6 +3,7 @@
 var bevapp = new Vue({
   el: '#bev-table',
   data: {
+    token: "",
     current_account: {
       Owner: {
         Name: "---",
@@ -44,27 +45,34 @@ var bevapp = new Vue({
     },
     changeAccount: function (diff) {
       var app = this
-      $.post("/account/" + app.current_account.ID,{value: diff}, function(response){
+      $.post("/account/" + app.current_account.ID, { value: diff }, function (response) {
         app.current_account.Value = JSON.parse(response).Value
       })
     },
     updateAccounts: function () {
       var app = this
-      $.get("/accounts", {}, function (response) {
+      $.get("/accounts", { token: app.token }, function (response) {
         app.accounts = JSON.parse(response)
         app.current_account = app.accounts[0]
       })
     },
     updateBeverages: function () {
       var app = this
-      $.get("/beverages", {}, function (response) {
+      $.get("/beverages", { token: app.token }, function (response) {
         app.beverages = JSON.parse(response)
+      })
+    },
+    getToken: function () {
+      var app = this
+      $.get("/login/token", {}, function (response) {
+        app.token = JSON.parse(response)
+        app.updateBeverages()
+        app.updateAccounts()
       })
     }
   },
   created: function () {
-    this.updateBeverages()
-    this.updateAccounts()
+    this.getToken()
   }
 })
 
