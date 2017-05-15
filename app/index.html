@@ -24,7 +24,7 @@
             </div>
             <br>
             <br>
-            <bev-table v-if="show_table" v-bind:beverages="beverages" v-bind:exec="make_payment"></bev-table>
+            <bev-table v-bind:token="token" v-if="show_table" v-bind:beverages="beverages" v-bind:exec="make_payment"></bev-table>
         </div>
     </div>
 

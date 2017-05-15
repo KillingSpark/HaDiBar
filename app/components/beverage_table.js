@@ -7,7 +7,7 @@ Vue.component('bev-table', {
       bev_name: ""
     }
   },
-  props: ['beverages', 'exec'],
+  props: ['beverages', 'token', 'exec'],
   template:
   ` <div>
       <div class="row">
@@ -46,8 +46,9 @@ Vue.component('bev-table', {
     deleteBeverage: function (index) {
       var comp = this
       $.ajax({
-        url: "/beverage/" + comp.beverages[index].ID,
+        url: "/beverage/" + comp.beverages[index].ID + "?token=" + comp.token,
         type: 'DELETE',
+        data: {token: comp.token},
         success: function (response) {
           comp.beverages.splice(index, 1)
         }
@@ -58,7 +59,7 @@ Vue.component('bev-table', {
       $.ajax({
         url: "/newbeverage",
         type: 'PUT',
-        data: { name: this.bev_name, value: this.bev_value },
+        data: { token: comp.token, name: this.bev_name, value: this.bev_value },
         success: function (response) {
           comp.beverages.push(JSON.parse(response))
         }
