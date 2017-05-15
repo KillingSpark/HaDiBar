@@ -22,12 +22,28 @@ func MakeLoginController() LoginController {
 //CheckIdentity checks if the token is valid and then executes the given handle
 func (controller *LoginController) CheckIdentity(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		token := r.FormValue("token")
+		var token string
+		formToken := r.FormValue("token")
+		queryToken := r.URL.Query().Get("token")
+
+		if len(formToken) > 0 && len(queryToken) > 0 {
+			if formToken == queryToken {
+				token = formToken
+			}
+		}
+
+		if len(formToken) > 0 && len(queryToken) <= 0 {
+			token = formToken
+		}
+
+		if len(queryToken) > 0 && len(formToken) <= 0 {
+			token = queryToken
+		}
+
 		if controller.service.IsTokenValid(token) {
 			h(w, r, ps)
 		} else {
 			// Request Basic Authentication otherwise
-			w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		}
 	}
