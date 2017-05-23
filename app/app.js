@@ -51,28 +51,19 @@ var bevapp = new Vue({
     },
     updateAccounts: function () {
       var app = this
-      $.get("/accounts", { token: app.token }, function (response) {
+      $.get("/accounts", {}, function (response) {
         app.accounts = JSON.parse(response)
         app.current_account = app.accounts[0]
       })
     },
     updateBeverages: function () {
       var app = this
-      $.get("/beverages", { token: app.token }, function (response) {
+      $.get("/beverages", {}, function (response) {
         app.beverages = JSON.parse(response)
       })
     },
-    getToken: function () {
-      var app = this
-      $.get("/login/token", {}, function (response) {
-        app.token = JSON.parse(response)
-        app.updateBeverages()
-        app.updateAccounts()
-      })
-    }
   },
   created: function () {
-    this.getToken()
   }
 })
 
