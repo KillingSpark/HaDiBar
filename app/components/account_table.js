@@ -28,6 +28,7 @@ Vue.component('acc-info-table', {
   props: ['account', 'show_payment', 'accs', 'selected'],
   template: `
   <div>
+    <div class="row">
       <table id="acc_table" class="table-bordered col-md-3">
           <thead>
               <tr>
@@ -42,7 +43,9 @@ Vue.component('acc-info-table', {
               </tr>
           </tbody>
       </table>
-      <div v-if="show_payment">
+      </div>
+      <br><br>
+      <div v-if="show_payment" class="row">
         <input type="text" v-model="difference" />
         <button v-on:click="make_payment">Execute</button>
       </div>
