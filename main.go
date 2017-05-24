@@ -3,48 +3,71 @@ package main
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
+	"log"
 
+	"github.com/gin-gonic/gin"
 	"github.com/killingspark/HaDiBar/controllers"
+	"github.com/killingspark/HaDiBar/services"
 )
 
-func makeBeverageRoutes(router *httprouter.Router, lc *controllers.LoginController, bc *controllers.BeverageController) {
-	router.GET("/beverages", lc.CheckIdentity(bc.GetBeverages))
-	router.GET("/beverage/:id", lc.CheckIdentity(bc.GetBeverage))
-	router.POST("/beverage/:id", lc.CheckIdentity(bc.UpdateBeverage))
-	router.DELETE("/beverage/:id", lc.CheckIdentity(bc.DeleteBeverage))
-	router.PUT("/newbeverage", lc.CheckIdentity(bc.NewBeverage))
+func makeBeverageRoutes(router *gin.Engine, bc *controllers.BeverageController) {
+	bevGroup := router.Group("/beverage")
+	bevGroup.GET("/:id", bc.GetBeverage)
+	bevGroup.POST("/:id", bc.UpdateBeverage)
+	bevGroup.DELETE("/:id", bc.DeleteBeverage)
+	bevGroup.PUT("/new", bc.NewBeverage)
+	bevGroup.GET("/", bc.GetBeverages)
 }
 
-func makeAccountRoutes(router *httprouter.Router, lc *controllers.LoginController, ac *controllers.AccountController) {
-	router.GET("/accounts", lc.CheckIdentity(ac.GetAccounts))
-	router.GET("/account/:id", lc.CheckIdentity(ac.GetAccount))
-	router.POST("/account/:id", lc.CheckIdentity(ac.UpdateAccount))
+func makeAccountRoutes(router *gin.Engine, ac *controllers.AccountController) {
+	accGroup := router.Group("/account")
+	accGroup.GET("/", ac.GetAccounts)
+	accGroup.GET("/:id", ac.GetAccount)
+	accGroup.POST("/:id", ac.UpdateAccount)
 }
 
-func makeLoginRoutes(router *httprouter.Router, lc *controllers.LoginController) {
-	router.GET("/login", lc.CheckIdentity(lc.NewTokenWithCredentials))
-	router.GET("/session", lc.CheckIdentity(func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {}))
+func makeLoginRoutes(router *gin.Engine, lc *controllers.LoginController) {
+	router.GET("/login", lc.NewTokenWithCredentials)
+	router.GET("/logout", lc.LogOut)
+	//used to get an initial session id if wished
+	router.GET("/session", func(c *gin.Context) {})
+}
+
+//CheckSession checks if the token is valid and then executes the given handle
+func CheckSession(ss *services.SessionService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		sessionID := ctx.Request.Header.Get("sessionID")
+
+		if sessionID == "" {
+			println("no session header found. Adding new one")
+			ctx.Writer.Header().Set("sessionID", ss.MakeSessionID())
+		} else {
+			ctx.Writer.Header().Set("sessionID", sessionID)
+			println("call from session: " + sessionID)
+		}
+		ctx.Writer.WriteHeader(http.StatusCreated)
+		ctx.Next()
+	}
 }
 
 func main() {
-	router := httprouter.New()
+	router := gin.New()
 
-	//app ist unter /app erreichbar und served das build verzeichnis von react
-	router.ServeFiles("/app/*filepath", http.Dir("app"))
-	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		http.Redirect(w, r, "/app", 300)
+	router.GET("/", func(ctx *gin.Context) {
+		ctx.Redirect(300, "/app")
 	})
+	router.StaticFS("/app", http.Dir("app"))
 
+	ss := services.MakeSessionService()
 	bc := controllers.MakeBeverageController()
 	ac := controllers.MakeAccountController()
-	lc := controllers.MakeLoginController()
+	lc := controllers.MakeLoginController(&ss)
 
-	makeBeverageRoutes(router, &lc, &bc)
-	makeAccountRoutes(router, &lc, &ac)
+	router.Use(CheckSession(&ss))
+
+	makeBeverageRoutes(router, &bc)
+	makeAccountRoutes(router, &ac)
 	makeLoginRoutes(router, &lc)
-	err := http.ListenAndServe(":1337", router)
-	if err != nil {
-		println(err.Error())
-	}
+
+	log.Fatal(http.ListenAndServe(":8080", router))
 }

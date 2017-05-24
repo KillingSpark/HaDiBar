@@ -9,6 +9,7 @@ import (
 type Session struct {
 	Token string
 	ID    string
+	Name  string
 }
 
 //SessionService handles the sessions

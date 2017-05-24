@@ -52,7 +52,7 @@ var bevapp = new Vue({
     updateAccounts: function () {
       var app = this
       $.ajax({
-        url: "/accounts",
+        url: "/account/",
         type: 'GET',
         data: {},
         beforeSend: function (xhr) {
@@ -67,7 +67,7 @@ var bevapp = new Vue({
     updateBeverages: function () {
       var app = this
       $.ajax({
-        url: "/beverages",
+        url: "/beverage/",
         type: 'GET',
         data: {},
         beforeSend: function (xhr) {

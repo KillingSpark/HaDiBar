@@ -61,7 +61,7 @@ Vue.component('bev-table', {
     addBeverage: function () {
       var comp = this
       $.ajax({
-        url: "/newbeverage",
+        url: "/beverage/new",
         type: 'PUT',
         data: { name: this.bev_name, value: this.bev_value },
         beforeSend: function (xhr) {

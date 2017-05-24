@@ -3,11 +3,10 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"strconv"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/gin-gonic/gin"
 	"github.com/killingspark/HaDiBar/services"
 )
 
@@ -24,29 +23,29 @@ func MakeAccountController() AccountController {
 }
 
 //GetAccounts gets all existing accounts
-func (controller *AccountController) GetAccounts(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (controller *AccountController) GetAccounts(ctx *gin.Context) {
 	enc, _ := json.Marshal(controller.service.GetAccounts())
-	fmt.Fprint(w, string(enc))
+	fmt.Fprint(ctx.Writer, string(enc))
 }
 
 //GetAccount returns the account identified by account/:id
-func (controller *AccountController) GetAccount(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	ID, _ := strconv.Atoi(ps.ByName("id"))
+func (controller *AccountController) GetAccount(ctx *gin.Context) {
+	ID, _ := strconv.Atoi(ctx.Param("id"))
 	enc, _ := json.Marshal(controller.service.GetAccount(int64(ID)))
-	fmt.Fprint(w, string(enc))
+	fmt.Fprint(ctx.Writer, string(enc))
 }
 
 //UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
-func (controller *AccountController) UpdateAccount(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	ID, err := strconv.Atoi(ps.ByName("id"))
+func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
+	ID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Fprintln(w, "id is NaN")
+		fmt.Fprint(ctx.Writer, "id is NaN")
 	}
-	value, err := strconv.Atoi(r.FormValue("value"))
+	value, err := strconv.Atoi(ctx.PostForm("value"))
 	if err != nil {
-		fmt.Fprintln(w, "value is NaN")
+		fmt.Fprint(ctx.Writer, "value is NaN")
 	}
 	acc, _ := controller.service.UpdateAccount(int64(ID), value)
 	enc, _ := json.Marshal(acc)
-	fmt.Fprint(w, string(enc))
+	fmt.Fprint(ctx.Writer, string(enc))
 }
