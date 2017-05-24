@@ -7,7 +7,7 @@ Vue.component('bev-table', {
       bev_name: ""
     }
   },
-  props: ['beverages', 'exec'],
+  props: ['beverages', 'exec', 'sessionid'],
   template:
   ` <div>
       <div class="row">
@@ -29,13 +29,14 @@ Vue.component('bev-table', {
                 </tr>
             </tbody>
         </table>
-        <div class="col-md-8" style="float:right;">
-          <h4>MAKE ALL THE DRINKS!</h4>
-          <br>
-          <input class="col-md-3" type="text" v-model="bev_name" placeholder="new name" />
-          <input class="col-md-3" type="text" v-model="bev_value" placeholder="new value" />
-          <button class="col-md-2" v-on:click="addBeverage">Add</button>
-        </div>
+        <div class="col-md-6" id="makedrink">
+            <span id="makedrinktext">MAKE ALL THE DRINKS!</span>
+            <br>
+            <input type="text" v-model="bev_name" placeholder="new name" />
+            <input type="text" v-model="bev_value" placeholder="new value" />
+            <br>
+            <button style="margin-top: 1%;" class="col-md-2" v-on:click="addBeverage">Add</button>
+          </div>
       </div>
       <div class="row">
         <button v-on:click="exec">Execute</button>
@@ -46,9 +47,12 @@ Vue.component('bev-table', {
     deleteBeverage: function (index) {
       var comp = this
       $.ajax({
-        url: "/beverage/",
+        url: "/beverage/" + comp.beverages[index].ID,
         type: 'DELETE',
         data: {},
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("sessionID", comp.sessionid)
+        },
         success: function (response) {
           comp.beverages.splice(index, 1)
         }
@@ -60,6 +64,9 @@ Vue.component('bev-table', {
         url: "/newbeverage",
         type: 'PUT',
         data: { name: this.bev_name, value: this.bev_value },
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("sessionID", comp.sessionid)
+        },
         success: function (response) {
           comp.beverages.push(JSON.parse(response))
         }

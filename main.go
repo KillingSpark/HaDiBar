@@ -23,7 +23,8 @@ func makeAccountRoutes(router *httprouter.Router, lc *controllers.LoginControlle
 }
 
 func makeLoginRoutes(router *httprouter.Router, lc *controllers.LoginController) {
-	router.GET("/login/token", lc.NewTokenWithCredentials)
+	router.GET("/login", lc.CheckIdentity(lc.NewTokenWithCredentials))
+	router.GET("/session", lc.CheckIdentity(func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {}))
 }
 
 func main() {
@@ -42,5 +43,8 @@ func main() {
 	makeBeverageRoutes(router, &lc, &bc)
 	makeAccountRoutes(router, &lc, &ac)
 	makeLoginRoutes(router, &lc)
-	http.ListenAndServe(":8080", router)
+	err := http.ListenAndServe(":1337", router)
+	if err != nil {
+		println(err.Error())
+	}
 }

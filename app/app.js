@@ -3,7 +3,7 @@
 var bevapp = new Vue({
   el: '#bev-table',
   data: {
-    token: "",
+    sessionid: "Huhu",
     current_account: {
       Owner: {
         Name: "---",
@@ -51,19 +51,42 @@ var bevapp = new Vue({
     },
     updateAccounts: function () {
       var app = this
-      $.get("/accounts", {}, function (response) {
-        app.accounts = JSON.parse(response)
-        app.current_account = app.accounts[0]
+      $.ajax({
+        url: "/accounts",
+        type: 'GET',
+        data: {},
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("sessionID", app.sessionid)
+        },
+        success: function (response) {
+          app.accounts = JSON.parse(response)
+          app.current_account = app.accounts[0]
+        }
       })
     },
     updateBeverages: function () {
       var app = this
-      $.get("/beverages", {}, function (response) {
-        app.beverages = JSON.parse(response)
+      $.ajax({
+        url: "/beverages",
+        type: 'GET',
+        data: {},
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("sessionID", app.sessionid)
+        },
+        success: function (response) {
+          app.beverages = JSON.parse(response)
+        }
       })
     },
   },
   created: function () {
+    var app = this
+    //getting an initial sessionID for the API
+    $.get("/session", {}, function (data, textStatus, response) {
+      app.sessionid = response.getResponseHeader('sessionID')
+      app.updateAccounts()
+      app.updateBeverages()
+    })
   }
 })
 

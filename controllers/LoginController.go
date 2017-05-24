@@ -11,41 +11,29 @@ import (
 
 //LoginController is the controller for the logins
 type LoginController struct {
-	service services.LoginService
+	loginservice   services.LoginService
+	sessionservice services.SessionService
 }
 
 //MakeLoginController creates a new LoginController and initializes the service
 func MakeLoginController() LoginController {
-	return LoginController{service: services.LoginService{}}
+	return LoginController{loginservice: services.LoginService{}, sessionservice: services.MakeSessionService()}
 }
 
 //CheckIdentity checks if the token is valid and then executes the given handle
 func (controller *LoginController) CheckIdentity(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var token string
-		formToken := r.FormValue("token")
-		queryToken := r.URL.Query().Get("token")
+		sessionID := r.Header.Get("sessionID")
 
-		if len(formToken) > 0 && len(queryToken) > 0 {
-			if formToken == queryToken {
-				token = formToken
-			}
-		}
-
-		if len(formToken) > 0 && len(queryToken) <= 0 {
-			token = formToken
-		}
-
-		if len(queryToken) > 0 && len(formToken) <= 0 {
-			token = queryToken
-		}
-
-		if controller.service.IsTokenValid(token) {
-			h(w, r, ps)
+		if sessionID == "" {
+			println("no session header found. Adding new one")
+			w.Header().Set("sessionID", controller.sessionservice.MakeSessionID())
 		} else {
-			// Request Basic Authentication otherwise
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			w.Header().Set("sessionID", sessionID)
+			println("call from session: " + sessionID)
 		}
+		w.WriteHeader(http.StatusCreated)
+		h(w, r, ps)
 	}
 }
 
@@ -54,10 +42,23 @@ func (controller *LoginController) NewTokenWithCredentials(w http.ResponseWriter
 	name := r.FormValue("name")
 	password := r.FormValue("password")
 
-	var tk, ok = controller.service.RequestToken(name, password)
+	var tk, ok = controller.loginservice.RequestToken(name, password)
 	if !ok {
 		fmt.Fprint(w, "NOPE")
-	}
+	} else {
+		sessionCookie, err := r.Cookie("sessionID")
+		if err != nil {
+			return
+		}
 
-	fmt.Fprint(w, "\""+tk+"\"")
+		sessionID := sessionCookie.Value
+		session, err := controller.sessionservice.GetSession(sessionID)
+		if err != nil {
+			return
+		}
+
+		session.Token = tk
+		fmt.Fprint(w, "OK")
+
+	}
 }

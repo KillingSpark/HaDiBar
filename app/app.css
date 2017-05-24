@@ -3,6 +3,20 @@ div.tab {
     border: 1px solid #ccc;
     background-color: #f1f1f1;
 }
+
+.login_button{
+    border-radius: 10px;
+    background-color: inherit;
+}
+
+#makedrinktext {
+    font-size: 30px;
+}
+
+#makedrink {
+    margin-left: 10%;
+}
+
 div.tab button {
     float: left;
 }
@@ -21,13 +35,34 @@ th{
 input{
     border: 1px solid #ccc;
 }
+body { 
+    padding-bottom: 70px;
+    background-color: beige;
+}
+
+.content {
+    padding-top: 1%;
+    padding-left: 1%; 
+}
+
+.navbar {
+    background-color: #999;
+    padding-left: 1%;
+    padding-bottom: 0.5%;
+    padding-top: 0.5%; 
+}
+
+#logintext {
+    font-size: 20px;
+    margin-right: 2%;
+}
+
 button {
     border: none;
     outline: none;
     cursor: pointer;
     padding: 14px 16px;
     border: 1px solid #ccc;
-    background-color: inherit;
     transition: 0.3s;
 }
 div.tab button.active {

@@ -27,7 +27,7 @@ Vue.component('acc-info-table', {
   },
   props: ['account', 'show_payment', 'accs', 'selected'],
   template: `
-    <div>
+  <div>
       <table id="acc_table" class="table-bordered col-md-3">
           <thead>
               <tr>
