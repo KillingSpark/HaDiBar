@@ -1,4 +1,4 @@
-package services
+package beverages
 
 import (
 	"database/sql"
@@ -7,7 +7,6 @@ import (
 
 	"strconv"
 
-	"github.com/killingspark/HaDiBar/models"
 	_ "github.com/mattn/go-sqlite3" //sqlite driver
 )
 
@@ -16,8 +15,8 @@ type SQLiteBeverageService struct {
 	*sql.DB
 }
 
-//MakeSQLiteBeverageService creates a new SQLiteService and initialises the database
-func MakeSQLiteBeverageService() SQLiteBeverageService {
+//NewSQLiteBeverageService creates a new SQLiteService and initialises the database
+func NewSQLiteBeverageService() *SQLiteBeverageService {
 	db, err := sql.Open("sqlite3", "beverages.db")
 
 	if err != nil {
@@ -30,20 +29,20 @@ func MakeSQLiteBeverageService() SQLiteBeverageService {
 	var sqlbs SQLiteBeverageService
 	sqlbs.DB = db
 
-	return sqlbs
+	return &sqlbs
 }
 
 //GetBeverages returns all existing beverages
-func (service *SQLiteBeverageService) GetBeverages() []models.Beverage {
+func (service *SQLiteBeverageService) GetBeverages() []Beverage {
 	rows, err := service.Query("SELECT * FROM beverages")
 	if err != nil {
 		print(err.Error())
 		return nil
 	}
 
-	var bevs []models.Beverage
+	var bevs []Beverage
 	for rows.Next() {
-		var bev models.Beverage
+		var bev Beverage
 		err := rows.Scan(&bev.ID, &bev.Name, &bev.Value)
 		if err != nil {
 		}
@@ -55,8 +54,8 @@ func (service *SQLiteBeverageService) GetBeverages() []models.Beverage {
 }
 
 //GetBeverage returns the identified beverage
-func (service *SQLiteBeverageService) GetBeverage(aID string) (models.Beverage, bool) {
-	var bev models.Beverage
+func (service *SQLiteBeverageService) GetBeverage(aID string) (Beverage, bool) {
+	var bev Beverage
 	err := service.QueryRow("SELECT * FROM beverages WHERE ID LIKE ?", aID).Scan(&bev.ID, &bev.Name, &bev.Value)
 	if err != nil {
 		return bev, false
@@ -66,8 +65,8 @@ func (service *SQLiteBeverageService) GetBeverage(aID string) (models.Beverage, 
 }
 
 //NewBeverage creates a new beverage and stores it in the database
-func (service *SQLiteBeverageService) NewBeverage(aName string, aValue int) (models.Beverage, bool) {
-	bev := models.Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue}
+func (service *SQLiteBeverageService) NewBeverage(aName string, aValue int) (Beverage, bool) {
+	bev := Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue}
 	_, err := service.Exec("INSERT INTO beverages VALUES (?,?,?)", bev.ID, bev.Name, bev.Value)
 	if err != nil {
 		return bev, false
@@ -77,9 +76,9 @@ func (service *SQLiteBeverageService) NewBeverage(aName string, aValue int) (mod
 }
 
 //UpdateBeverage updates the data for the identified beverage (eg name and value)
-func (service *SQLiteBeverageService) UpdateBeverage(aID string, aName string, aValue int) (models.Beverage, bool) {
+func (service *SQLiteBeverageService) UpdateBeverage(aID string, aName string, aValue int) (Beverage, bool) {
 	_, err := service.Exec("UPDATE beverages SET Name = ?, Value = ? WHERE ID = ?", aName, aValue, aID)
-	bev := models.Beverage{ID: aID, Name: aName, Value: aValue}
+	bev := Beverage{ID: aID, Name: aName, Value: aValue}
 	if err != nil {
 		return bev, false
 	}

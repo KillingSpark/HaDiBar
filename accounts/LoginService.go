@@ -1,11 +1,9 @@
-package services
+package accounts
 
 import (
 	"time"
 
 	"strconv"
-
-	"github.com/killingspark/HaDiBar/models"
 )
 
 type token struct {
@@ -21,17 +19,17 @@ func makeToken(value string) token {
 
 //LoginService handles all operations connected to identification
 type LoginService struct {
-	tokenmap map[string]models.Entity
+	tokenmap map[string]Entity
 	tokens   []token
 }
 
 //GetEntityFromToken returns the entity that belongs to the token. If the token is invalid/expired the boolean
 //is going to be false
-func (service *LoginService) GetEntityFromToken(tokenval string) (models.Entity, bool) {
+func (service *LoginService) GetEntityFromToken(tokenval string) (Entity, bool) {
 
 	_, ok := service.lookUpToken(tokenval)
 	if !ok {
-		return models.Entity{}, false
+		return Entity{}, false
 	}
 
 	ent := service.tokenmap[tokenval]

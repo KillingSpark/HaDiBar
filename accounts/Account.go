@@ -1,4 +1,4 @@
-package models
+package accounts
 
 //Account : represents the Accouts of Floors/Roomates/etc
 type Account struct {

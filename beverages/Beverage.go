@@ -1,4 +1,4 @@
-package models
+package beverages
 
 //Beverage : Model for the system
 type Beverage struct {

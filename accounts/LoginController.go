@@ -1,21 +1,21 @@
-package controllers
+package accounts
 
 import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/HaDiBar/services"
+	"github.com/killingspark/HaDiBar/sessions"
 )
 
 //LoginController is the controller for the logins
 type LoginController struct {
-	loginservice   services.LoginService
-	sessionservice *services.SessionService
+	loginservice   *LoginService
+	sessionservice *sessions.SessionManager
 }
 
-//MakeLoginController creates a new LoginController and initializes the service
-func MakeLoginController(aSs *services.SessionService) LoginController {
-	return LoginController{loginservice: services.LoginService{}, sessionservice: aSs}
+//NewLoginController creates a new LoginController and initializes the service
+func NewLoginController(aSs *sessions.SessionManager) *LoginController {
+	return &LoginController{loginservice: &LoginService{}, sessionservice: aSs}
 }
 
 //NewTokenWithCredentials returns a new token if the credentials (in the formvalues) "name" and "password" are valid
@@ -38,7 +38,7 @@ func (controller *LoginController) NewTokenWithCredentials(ctx *gin.Context) {
 	}
 }
 
-//NewTokenWithCredentials returns a new token if the credentials (in the formvalues) "name" and "password" are valid
+//LogOut uncouples the usersession from a token
 func (controller *LoginController) LogOut(ctx *gin.Context) {
 	sessionID := ctx.Request.Header.Get("sessionID")
 	session, err := controller.sessionservice.GetSession(sessionID)

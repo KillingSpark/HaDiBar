@@ -1,4 +1,4 @@
-package models
+package accounts
 
 //Entity (s) represent owners of an Account
 type Entity struct {

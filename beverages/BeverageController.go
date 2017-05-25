@@ -1,4 +1,4 @@
-package controllers
+package beverages
 
 import (
 	"encoding/json"
@@ -8,20 +8,18 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/HaDiBar/services"
 )
 
 //BeverageController : Controller for the Beverages
 type BeverageController struct {
-	service *services.SQLiteBeverageService
+	service *SQLiteBeverageService
 }
 
-//MakeBeverageController creates a new BeverageController and initializes its service
-func MakeBeverageController() BeverageController {
+//NewBeverageController creates a new BeverageController and initializes its service
+func NewBeverageController() *BeverageController {
 	var bc BeverageController
-	s := services.MakeSQLiteBeverageService()
-	bc.service = &s //needed controller indirection because the Methods are defined for pointers
-	return bc
+	bc.service = NewSQLiteBeverageService()
+	return &bc
 }
 
 //GetBeverages responds with all existing Beverages

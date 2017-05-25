@@ -1,4 +1,4 @@
-package controllers
+package accounts
 
 import (
 	"encoding/json"
@@ -7,19 +7,18 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/HaDiBar/services"
 )
 
 //AccountController is the controller for accounts
 type AccountController struct {
-	service services.AccountService
+	service *AccountService
 }
 
-//MakeAccountController creates a new AccountController and initializes the service
-func MakeAccountController() AccountController {
+//NewAccountController creates a new AccountController and initializes the service
+func NewAccountController() *AccountController {
 	var acC AccountController
-	acC.service = services.MakeAccountService()
-	return acC
+	acC.service = NewAccountService()
+	return &acC
 }
 
 //GetAccounts gets all existing accounts
