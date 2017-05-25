@@ -12,10 +12,7 @@ import (
 	"github.com/killingspark/HaDiBar/sessions"
 )
 
-var (
-	sessMan = sessions.NewSessionManager()
-)
-
+//making routes seperate for better readability
 func makeBeverageRoutes(router *gin.Engine, bc *beverages.BeverageController) {
 	bevGroup := router.Group("/beverage")
 	bevGroup.GET("/:id", bc.GetBeverage)
@@ -43,11 +40,15 @@ func main() {
 	logger.PrepareLogger()
 	router := gin.New()
 
+	//serves the wepapp folder as /app
+	router.StaticFS("/app", http.Dir("webapp"))
+
+	//redirect users from / to /app
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.Redirect(300, "/app")
 	})
-	router.StaticFS("/app", http.Dir("webapp"))
 
+	sessMan := sessions.NewSessionManager()
 	bc := beverages.NewBeverageController()
 	ac := accounts.NewAccountController()
 	lc := accounts.NewLoginController(sessMan)

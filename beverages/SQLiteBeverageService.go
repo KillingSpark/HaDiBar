@@ -7,6 +7,7 @@ import (
 
 	"strconv"
 
+	"github.com/killingspark/HaDiBar/logger"
 	_ "github.com/mattn/go-sqlite3" //sqlite driver
 )
 
@@ -20,7 +21,7 @@ func NewSQLiteBeverageService() *SQLiteBeverageService {
 	db, err := sql.Open("sqlite3", "beverages.db")
 
 	if err != nil {
-		print("Beverage Database not initialized.")
+		logger.Logger.Error("Beverage Database not initialized.")
 		db.Close()
 	}
 
@@ -36,7 +37,7 @@ func NewSQLiteBeverageService() *SQLiteBeverageService {
 func (service *SQLiteBeverageService) GetBeverages() []Beverage {
 	rows, err := service.Query("SELECT * FROM beverages")
 	if err != nil {
-		print(err.Error())
+		logger.Logger.Error(err.Error())
 		return nil
 	}
 

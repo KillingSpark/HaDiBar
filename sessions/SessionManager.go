@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/killingspark/HaDiBar/logger"
 )
 
 //Session represents a Session
@@ -40,10 +41,10 @@ func (manager *SessionManager) CheckSession(ctx *gin.Context) {
 	var sessionID = ctx.Request.Header.Get("sessionID")
 
 	if sessionID == "" {
-		println("no session header found. Adding new one")
+		logger.Logger.Debug("no session header found. Adding new one")
 		sessionID = manager.MakeSessionID()
 	} else {
-		println("call from session: " + sessionID)
+		logger.Logger.Debug("call from session: " + sessionID)
 	}
 
 	//headers get written by gin
@@ -53,7 +54,7 @@ func (manager *SessionManager) CheckSession(ctx *gin.Context) {
 		ctx.Set("session", session)
 		ctx.Next()
 	} else {
-		println(err.Error())
+		logger.Logger.Warning(err.Error())
 		ctx.Writer.WriteString("invalid session")
 	}
 }

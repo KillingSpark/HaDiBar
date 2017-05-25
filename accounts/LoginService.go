@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"io"
 	"time"
+
+	"github.com/killingspark/HaDiBar/logger"
 )
 
 type token struct {
@@ -47,7 +49,7 @@ func (service *LoginService) lookUpToken(tokenval string) (token, bool) {
 	for index, tk := range service.tokens {
 		if tk.expiredate >= time.Now().UnixNano() {
 			//delete expired tokens
-			println("Expired: " + tk.value)
+			logger.Logger.Debug("Token expired: " + tk.value)
 			service.tokens = append(service.tokens[:index], service.tokens[index+1:]...)
 		} else {
 			if tk.value == tokenval {
