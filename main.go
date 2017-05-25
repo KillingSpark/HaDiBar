@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/HaDiBar/accounts"
 	"github.com/killingspark/HaDiBar/beverages"
+	"github.com/killingspark/HaDiBar/logger"
 	"github.com/killingspark/HaDiBar/sessions"
 )
 
@@ -32,13 +33,14 @@ func makeAccountRoutes(router *gin.Engine, ac *accounts.AccountController) {
 }
 
 func makeLoginRoutes(router *gin.Engine, lc *accounts.LoginController) {
-	router.GET("/login", lc.Login)
-	router.GET("/logout", lc.LogOut)
+	router.POST("/login", lc.Login)
+	router.POST("/logout", lc.LogOut)
 	//used to get an initial session id if wished
 	router.GET("/session", func(c *gin.Context) {})
 }
 
 func main() {
+	logger.PrepareLogger()
 	router := gin.New()
 
 	router.GET("/", func(ctx *gin.Context) {

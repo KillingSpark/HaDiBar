@@ -84,7 +84,7 @@ func (manager *SessionManager) MakeSessionID() string {
 		return ""
 	}
 	encID := base64.URLEncoding.EncodeToString(ID)
-	session := Session{Token: "Blabla", ID: encID, expiryDate: time.Now().UnixNano() - manager.maxLifeTime}
+	session := Session{Token: "", ID: encID, expiryDate: time.Now().UnixNano() - manager.maxLifeTime}
 	manager.sessionmap[encID] = session
 	return session.ID
 }

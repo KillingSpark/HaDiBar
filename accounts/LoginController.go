@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/killingspark/HaDiBar/logger"
 	"github.com/killingspark/HaDiBar/sessions"
 )
 
@@ -23,7 +24,9 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 	name := ctx.PostForm("name")
 	password := ctx.PostForm("password")
 
+	logger.Logger.Debug("Requesting token for: " + name)
 	var tk, ok = controller.loginservice.RequestToken(name, password)
+	logger.Logger.Debug("Received token for: " + name + " : " + tk)
 	if !ok {
 		fmt.Fprint(ctx.Writer, "credentials rejected")
 	} else {

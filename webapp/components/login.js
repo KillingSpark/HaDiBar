@@ -28,6 +28,7 @@ Vue.component('login-form', {
             var comp = this
             $.ajax({
                 url: "/login",
+                type: "POST",
                 data: { name: comp.name, password: comp.password },
                 beforeSend: function (xhr) {
                     xhr.setRequestHeader("sessionID", comp.sessionid)
@@ -45,6 +46,7 @@ Vue.component('login-form', {
             var comp = this
             $.ajax({
                 url: "/logout",
+                type: "POST",
                 data: {},
                 beforeSend: function (xhr) {
                     xhr.setRequestHeader("sessionID", comp.sessionid)

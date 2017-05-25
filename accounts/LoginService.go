@@ -70,12 +70,8 @@ func (service *LoginService) RequestToken(name, password string) (string, bool) 
 	if _, err := io.ReadFull(rand.Reader, tokenstring); err != nil {
 		return "", false
 	}
-
-	var enctokenstring = base64.URLEncoding.EncodeToString(tokenstring)
-	if name == "admin" {
-		enctokenstring = "admin" + enctokenstring
-	}
-
+	enctokenstring := base64.URLEncoding.EncodeToString(tokenstring)
 	service.tokens = append(service.tokens, makeToken(enctokenstring))
+
 	return enctokenstring, true
 }
