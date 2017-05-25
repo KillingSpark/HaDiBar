@@ -18,22 +18,22 @@ func NewLoginController(aSs *sessions.SessionManager) *LoginController {
 	return &LoginController{loginservice: &LoginService{}, sessionservice: aSs}
 }
 
-//NewTokenWithCredentials returns a new token if the credentials (in the formvalues) "name" and "password" are valid
-func (controller *LoginController) NewTokenWithCredentials(ctx *gin.Context) {
+//Login returns a new token if the credentials (in the formvalues) "name" and "password" are valid
+func (controller *LoginController) Login(ctx *gin.Context) {
 	name := ctx.PostForm("name")
 	password := ctx.PostForm("password")
 
 	var tk, ok = controller.loginservice.RequestToken(name, password)
 	if !ok {
-		fmt.Fprint(ctx.Writer, "NOPE")
+		fmt.Fprint(ctx.Writer, "credentials rejected")
 	} else {
-		sessionID := ctx.Request.Header.Get("sessionID")
-		session, err := controller.sessionservice.GetSession(sessionID)
-		if err != nil {
+		var ses, ok = ctx.Get("session")
+		if !ok {
 			return
 		}
-
+		session := ses.(sessions.Session)
 		session.Token = tk
+		session.Name = name
 		fmt.Fprint(ctx.Writer, "OK")
 	}
 }
@@ -47,5 +47,6 @@ func (controller *LoginController) LogOut(ctx *gin.Context) {
 	}
 
 	session.Token = ""
+	session.Name = ""
 	fmt.Fprint(ctx.Writer, "OK")
 }

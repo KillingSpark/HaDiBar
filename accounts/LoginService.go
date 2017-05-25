@@ -1,9 +1,10 @@
 package accounts
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"io"
 	"time"
-
-	"strconv"
 )
 
 type token struct {
@@ -65,11 +66,16 @@ func (service *LoginService) IsTokenValid(tokenval string) bool {
 
 //RequestToken returns a token for the credentials
 func (service *LoginService) RequestToken(name, password string) (string, bool) {
-	var tokenstring = strconv.FormatInt(time.Now().UnixNano(), 10)
-	if name == "admin" {
-		tokenstring = "admin" + tokenstring
+	tokenstring := make([]byte, 32)
+	if _, err := io.ReadFull(rand.Reader, tokenstring); err != nil {
+		return "", false
 	}
 
-	service.tokens = append(service.tokens, makeToken(tokenstring))
-	return tokenstring, true
+	var enctokenstring = base64.URLEncoding.EncodeToString(tokenstring)
+	if name == "admin" {
+		enctokenstring = "admin" + enctokenstring
+	}
+
+	service.tokens = append(service.tokens, makeToken(enctokenstring))
+	return enctokenstring, true
 }

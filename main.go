@@ -32,7 +32,7 @@ func makeAccountRoutes(router *gin.Engine, ac *accounts.AccountController) {
 }
 
 func makeLoginRoutes(router *gin.Engine, lc *accounts.LoginController) {
-	router.GET("/login", lc.NewTokenWithCredentials)
+	router.GET("/login", lc.Login)
 	router.GET("/logout", lc.LogOut)
 	//used to get an initial session id if wished
 	router.GET("/session", func(c *gin.Context) {})
@@ -50,7 +50,7 @@ func main() {
 	ac := accounts.NewAccountController()
 	lc := accounts.NewLoginController(sessMan)
 
-	router.Use(sessMan.CheckSession(sessMan))
+	router.Use(sessMan.CheckSession)
 
 	makeBeverageRoutes(router, bc)
 	makeAccountRoutes(router, ac)
