@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/killingspark/HaDiBar/logger"
+	"github.com/killingspark/HaDiBar/settings"
 	_ "github.com/mattn/go-sqlite3" //sqlite driver
 )
 
@@ -18,7 +19,7 @@ type SQLiteBeverageService struct {
 
 //NewSQLiteBeverageService creates a new SQLiteService and initialises the database
 func NewSQLiteBeverageService() *SQLiteBeverageService {
-	db, err := sql.Open("sqlite3", "beverages.db")
+	db, err := sql.Open("sqlite3", settings.S.DBPath)
 
 	if err != nil {
 		logger.Logger.Error("Beverage Database not initialized.")

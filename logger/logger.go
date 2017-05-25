@@ -3,6 +3,9 @@ package logger
 import (
 	"os"
 
+	"strings"
+
+	"github.com/killingspark/HaDiBar/settings"
 	logging "github.com/op/go-logging"
 )
 
@@ -14,6 +17,20 @@ var (
 
 //PrepareLogger puts a format and backend to the logger
 func PrepareLogger() {
-	formatted := logging.NewBackendFormatter(logging.NewLogBackend(os.Stdout, "", 0), format)
+	formatted := logging.AddModuleLevel(logging.NewBackendFormatter(logging.NewLogBackend(os.Stdout, "", 0), format))
+	level := strings.ToUpper(settings.S.LoggingLevel)
+
+	switch level {
+	case "DEBUG":
+		formatted.SetLevel(logging.DEBUG, "debugging")
+	case "CRITICAL":
+		formatted.SetLevel(logging.CRITICAL, "critical")
+	case "ERROR":
+		formatted.SetLevel(logging.ERROR, "error")
+	case "WARNING":
+		formatted.SetLevel(logging.WARNING, "warning")
+	default:
+		formatted.SetLevel(logging.DEBUG, "debugging")
+	}
 	logging.SetBackend(formatted)
 }

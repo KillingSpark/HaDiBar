@@ -1,0 +1,7 @@
+{
+    "port":8080,
+    "databasepath":"beverages.db",
+    "webapppath":"webapp",
+    "webapproute":"/app",
+    "logginglevel":"DEBUG"
+}

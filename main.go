@@ -5,11 +5,14 @@ import (
 
 	"log"
 
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/HaDiBar/accounts"
 	"github.com/killingspark/HaDiBar/beverages"
 	"github.com/killingspark/HaDiBar/logger"
 	"github.com/killingspark/HaDiBar/sessions"
+	"github.com/killingspark/HaDiBar/settings"
 )
 
 //making routes seperate for better readability
@@ -38,14 +41,15 @@ func makeLoginRoutes(router *gin.Engine, lc *accounts.LoginController) {
 
 func main() {
 	logger.PrepareLogger()
+	settings.ReadSettings()
 	router := gin.New()
 
 	//serves the wepapp folder as /app
-	router.StaticFS("/app", http.Dir("webapp"))
+	router.StaticFS(settings.S.WebappRoute, http.Dir(settings.S.WebappPath))
 
 	//redirect users from / to /app
 	router.GET("/", func(ctx *gin.Context) {
-		ctx.Redirect(300, "/app")
+		ctx.Redirect(300, settings.S.WebappRoute)
 	})
 
 	sessMan := sessions.NewSessionManager()
@@ -59,5 +63,5 @@ func main() {
 	makeAccountRoutes(router, ac)
 	makeLoginRoutes(router, lc)
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(settings.S.Port), router))
 }
