@@ -55,7 +55,7 @@ func (manager *SessionManager) CheckSession(ctx *gin.Context) {
 		ctx.Next()
 	} else {
 		logger.Logger.Warning(err.Error())
-		ctx.Writer.WriteString("invalid session")
+		ctx.Writer.WriteString("{\"status\":\"ERROR\", \"response\":\"invalid session\"")
 	}
 }
 

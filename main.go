@@ -18,23 +18,23 @@ import (
 //making routes seperate for better readability
 func makeBeverageRoutes(router *gin.Engine, bc *beverages.BeverageController) {
 	bevGroup := router.Group("/beverage")
-	bevGroup.GET("/:id", bc.GetBeverage)
-	bevGroup.POST("/:id", bc.UpdateBeverage)
-	bevGroup.DELETE("/:id", bc.DeleteBeverage)
+	bevGroup.GET("/get/:id", bc.GetBeverage)
+	bevGroup.POST("/update/:id", bc.UpdateBeverage)
+	bevGroup.DELETE("/delete/:id", bc.DeleteBeverage)
 	bevGroup.PUT("/new", bc.NewBeverage)
-	bevGroup.GET("/", bc.GetBeverages)
+	bevGroup.GET("/all", bc.GetBeverages)
 }
 
 func makeAccountRoutes(router *gin.Engine, ac *accounts.AccountController) {
 	accGroup := router.Group("/account")
-	accGroup.GET("/", ac.GetAccounts)
-	accGroup.GET("/:id", ac.GetAccount)
-	accGroup.POST("/:id", ac.UpdateAccount)
+	accGroup.GET("/all", ac.GetAccounts)
+	accGroup.GET("/get/:id", ac.GetAccount)
+	accGroup.POST("/update/:id", ac.UpdateAccount)
 }
 
 func makeLoginRoutes(router *gin.Engine, lc *accounts.LoginController) {
-	router.POST("/login", lc.Login)
-	router.POST("/logout", lc.LogOut)
+	router.POST("/session/login", lc.Login)
+	router.POST("/session/logout", lc.LogOut)
 	//used to get an initial session id if wished
 	router.GET("/session", func(c *gin.Context) {})
 }

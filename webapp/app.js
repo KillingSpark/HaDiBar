@@ -45,21 +45,35 @@ var bevapp = new Vue({
     },
     changeAccount: function (diff) {
       var app = this
-      $.post("/account/" + app.current_account.ID, { value: diff }, function (response) {
-        app.current_account.Value = JSON.parse(response).Value
+      $.ajax({
+        url: "/account/update/" + app.current_account.ID,
+        type: 'POST',
+        data: { value: diff },
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("sessionID", app.sessionid)
+        },
+        success: function (response) {
+          res = JSON.parse(response)
+          if (res.status == "OK") {
+            app.current_account.Value = res.response.Value
+          }
+        }
       })
     },
     updateAccounts: function () {
       var app = this
       $.ajax({
-        url: "/account/",
+        url: "/account/all",
         type: 'GET',
         data: {},
         beforeSend: function (xhr) {
           xhr.setRequestHeader("sessionID", app.sessionid)
         },
         success: function (response) {
-          app.accounts = JSON.parse(response)
+          res = JSON.parse(response)
+          if (res.status == "OK") {
+            app.accounts = res.response
+          }
           app.current_account = app.accounts[0]
         }
       })
@@ -67,14 +81,20 @@ var bevapp = new Vue({
     updateBeverages: function () {
       var app = this
       $.ajax({
-        url: "/beverage/",
+        url: "/beverage/all",
         type: 'GET',
         data: {},
         beforeSend: function (xhr) {
           xhr.setRequestHeader("sessionID", app.sessionid)
         },
         success: function (response) {
-          app.beverages = JSON.parse(response)
+          res = JSON.parse(response)
+          if (res.status == "OK") {
+            app.beverages = res.response
+            app.beverages.forEach(function(element) {
+              element.times = 0
+            }, this);
+          }
         }
       })
     },

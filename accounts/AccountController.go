@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/killingspark/HaDiBar/restapi"
 )
 
 //AccountController is the controller for accounts
@@ -23,14 +24,14 @@ func NewAccountController() *AccountController {
 
 //GetAccounts gets all existing accounts
 func (controller *AccountController) GetAccounts(ctx *gin.Context) {
-	enc, _ := json.Marshal(controller.service.GetAccounts())
+	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: controller.service.GetAccounts()})
 	fmt.Fprint(ctx.Writer, string(enc))
 }
 
 //GetAccount returns the account identified by account/:id
 func (controller *AccountController) GetAccount(ctx *gin.Context) {
 	ID, _ := strconv.Atoi(ctx.Param("id"))
-	enc, _ := json.Marshal(controller.service.GetAccount(int64(ID)))
+	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: controller.service.GetAccount(int64(ID))})
 	fmt.Fprint(ctx.Writer, string(enc))
 }
 
@@ -38,13 +39,15 @@ func (controller *AccountController) GetAccount(ctx *gin.Context) {
 func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 	ID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Fprint(ctx.Writer, "id is NaN")
+		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\", \"reponse\":\"id is NaN\"}")
+		return
 	}
 	value, err := strconv.Atoi(ctx.PostForm("value"))
 	if err != nil {
-		fmt.Fprint(ctx.Writer, "value is NaN")
+		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\", \"reponse\":\"value is NaN\"}")
+		return
 	}
 	acc, _ := controller.service.UpdateAccount(int64(ID), value)
-	enc, _ := json.Marshal(acc)
+	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: acc})
 	fmt.Fprint(ctx.Writer, string(enc))
 }

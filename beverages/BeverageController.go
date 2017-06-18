@@ -8,6 +8,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/killingspark/HaDiBar/restapi"
 )
 
 //BeverageController : Controller for the Beverages
@@ -24,7 +26,7 @@ func NewBeverageController() *BeverageController {
 
 //GetBeverages responds with all existing Beverages
 func (controller *BeverageController) GetBeverages(ctx *gin.Context) {
-	enc, _ := json.Marshal(controller.service.GetBeverages())
+	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: controller.service.GetBeverages()})
 	fmt.Fprint(ctx.Writer, string(enc))
 }
 
@@ -34,10 +36,10 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 
 	bev, ok := controller.service.GetBeverage(ID)
 	if ok {
-		enc, _ := json.Marshal(bev)
+		enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: bev})
 		fmt.Fprint(ctx.Writer, string(enc))
 	} else {
-		fmt.Fprint(ctx.Writer, "NOPE")
+		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\"}")
 	}
 }
 
@@ -45,7 +47,7 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 	nv, _ := strconv.Atoi(ctx.PostForm("value"))
 	nb, _ := controller.service.NewBeverage(ctx.PostForm("name"), nv)
-	enc, _ := json.Marshal(nb)
+	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: nb})
 
 	fmt.Fprint(ctx.Writer, string(enc))
 }
@@ -57,7 +59,8 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 	nv, _ := strconv.Atoi(ctx.PostForm("value"))
 	nn := ctx.PostForm("name")
 	nb, _ := controller.service.UpdateBeverage(ID, nn, nv)
-	enc, _ := json.Marshal(nb)
+	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: nb})
+
 	fmt.Fprint(ctx.Writer, string(enc))
 }
 
@@ -66,9 +69,9 @@ func (controller *BeverageController) DeleteBeverage(ctx *gin.Context) {
 	ID := ctx.Param("id")
 
 	if controller.service.DeleteBeverage(ID) {
-		fmt.Fprint(ctx.Writer, "YEP")
+		fmt.Fprint(ctx.Writer, "{\"status\":\"OK\"}")
 	} else {
-		fmt.Fprint(ctx.Writer, "NOPE")
+		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\"}")
 	}
 
 }

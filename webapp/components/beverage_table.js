@@ -47,14 +47,17 @@ Vue.component('bev-table', {
     deleteBeverage: function (index) {
       var comp = this
       $.ajax({
-        url: "/beverage/" + comp.beverages[index].ID,
+        url: "/beverage/delete/" + comp.beverages[index].ID,
         type: 'DELETE',
         data: {},
         beforeSend: function (xhr) {
           xhr.setRequestHeader("sessionID", comp.sessionid)
         },
         success: function (response) {
-          comp.beverages.splice(index, 1)
+          res = JSON.parse(response)
+          if (res.status == "OK") {
+            comp.beverages.splice(index, 1)
+          }
         }
       });
     },
@@ -68,7 +71,11 @@ Vue.component('bev-table', {
           xhr.setRequestHeader("sessionID", comp.sessionid)
         },
         success: function (response) {
-          comp.beverages.push(JSON.parse(response))
+          res = JSON.parse(response)
+          if (res.status == "OK") {
+            res.response.times = 0
+            comp.beverages.push(res.response)
+          }
         }
       });
     }
