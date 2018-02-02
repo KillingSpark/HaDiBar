@@ -30,14 +30,17 @@ func (controller *AccountController) GetAccounts(ctx *gin.Context) {
 
 //GetAccount returns the account identified by account/:id
 func (controller *AccountController) GetAccount(ctx *gin.Context) {
-	ID, _ := strconv.Atoi(ctx.Param("id"))
+	strID, _ := ctx.GetQuery("id")
+	ID, _ := strconv.Atoi(strID)
 	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: controller.service.GetAccount(int64(ID))})
 	fmt.Fprint(ctx.Writer, string(enc))
 }
 
 //UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
 func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
-	ID, err := strconv.Atoi(ctx.Param("id"))
+	strID, _ := ctx.GetQuery("id")
+	ID, err := strconv.Atoi(strID)
+
 	if err != nil {
 		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\", \"reponse\":\"id is NaN\"}")
 		return

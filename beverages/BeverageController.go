@@ -32,7 +32,7 @@ func (controller *BeverageController) GetBeverages(ctx *gin.Context) {
 
 //GetBeverage responds with the beverage identified by beverage/:id
 func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
-	ID := ctx.Param("id")
+	ID, _ := ctx.GetQuery("id")
 
 	bev, ok := controller.service.GetBeverage(ID)
 	if ok {
@@ -54,7 +54,7 @@ func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 
 //UpdateBeverage updates the beverage identified by /beverage/:id with the given form-values "value" and "name" and returns it
 func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
-	ID := ctx.Param("id")
+	ID, _ := ctx.GetQuery("id")
 
 	nv, _ := strconv.Atoi(ctx.PostForm("value"))
 	nn := ctx.PostForm("name")
@@ -66,7 +66,7 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 
 //DeleteBeverage deletes the beverage identified by /beverage/:id and responds with a YEP/NOPE
 func (controller *BeverageController) DeleteBeverage(ctx *gin.Context) {
-	ID := ctx.Param("id")
+	ID, _ := ctx.GetQuery("id")
 
 	if controller.service.DeleteBeverage(ID) {
 		fmt.Fprint(ctx.Writer, "{\"status\":\"OK\"}")

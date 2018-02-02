@@ -18,9 +18,9 @@ import (
 //making routes seperate for better readability
 func makeBeverageRoutes(router *gin.Engine, bc *beverages.BeverageController) {
 	bevGroup := router.Group("/beverage")
-	bevGroup.GET("/get/:id", bc.GetBeverage)
-	bevGroup.POST("/update/:id", bc.UpdateBeverage)
-	bevGroup.DELETE("/delete/:id", bc.DeleteBeverage)
+	bevGroup.GET("/get", bc.GetBeverage)
+	bevGroup.POST("/update", bc.UpdateBeverage)
+	bevGroup.DELETE("/delete", bc.DeleteBeverage)
 	bevGroup.PUT("/new", bc.NewBeverage)
 	bevGroup.GET("/all", bc.GetBeverages)
 }
@@ -28,8 +28,8 @@ func makeBeverageRoutes(router *gin.Engine, bc *beverages.BeverageController) {
 func makeAccountRoutes(router *gin.Engine, ac *accounts.AccountController) {
 	accGroup := router.Group("/account")
 	accGroup.GET("/all", ac.GetAccounts)
-	accGroup.GET("/get/:id", ac.GetAccount)
-	accGroup.POST("/update/:id", ac.UpdateAccount)
+	accGroup.GET("/get", ac.GetAccount)
+	accGroup.POST("/update", ac.UpdateAccount)
 }
 
 func makeLoginRoutes(router *gin.Engine, lc *accounts.LoginController) {
