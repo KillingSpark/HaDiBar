@@ -1,6 +1,9 @@
 package accounts
 
-import "strconv"
+import (
+	"errors"
+	"strconv"
+)
 
 //AccountService is a service for accessing accounts
 type AccountService struct {
@@ -29,7 +32,10 @@ func (service *AccountService) GetAccount(aID int64) Account {
 }
 
 //UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) UpdateAccount(aID int64, aValue int) (Account, bool) {
+func (service *AccountService) UpdateAccount(userToken string, aID int64, aValue int) (Account, error) {
+	if userToken == "" {
+		return Account{}, errors.New("no token provided")
+	}
 	service.accounts[aID].Value += aValue
-	return service.accounts[aID], true
+	return service.accounts[aID], nil
 }

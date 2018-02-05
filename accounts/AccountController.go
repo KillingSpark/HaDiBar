@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/killingspark/HaDiBar/sessions"
+
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -13,12 +15,14 @@ import (
 //AccountController is the controller for accounts
 type AccountController struct {
 	service *AccountService
+	sesMan  *sessions.SessionManager
 }
 
 //NewAccountController creates a new AccountController and initializes the service
-func NewAccountController() *AccountController {
+func NewAccountController(sm *sessions.SessionManager) *AccountController {
 	var acC AccountController
 	acC.service = NewAccountService()
+	acC.sesMan = sm
 	return &acC
 }
 
@@ -50,7 +54,18 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\", \"reponse\":\"value is NaN\"}")
 		return
 	}
-	acc, _ := controller.service.UpdateAccount(int64(ID), value)
+	sessionID := ctx.Request.Header.Get("sessionID")
+	session, err := controller.sesMan.GetSession(sessionID)
+	if err != nil {
+		enc, _ := json.Marshal(restapi.Response{Status: "ERROR", Response: err.Error()})
+		fmt.Fprint(ctx.Writer, string(enc))
+	}
+
+	acc, err := controller.service.UpdateAccount(session.Token, int64(ID), value)
+	if err != nil {
+		enc, _ := json.Marshal(restapi.Response{Status: "ERROR", Response: err.Error()})
+		fmt.Fprint(ctx.Writer, string(enc))
+	}
 	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: acc})
 	fmt.Fprint(ctx.Writer, string(enc))
 }

@@ -23,14 +23,14 @@ type Session struct {
 
 //SessionManager handles the sessions
 type SessionManager struct {
-	sessionmap  map[string]Session
+	sessionmap  map[string]*Session
 	maxLifeTime int64
 }
 
 //NewSessionManager creates new SessionManager and starts GC as goroutine
 func NewSessionManager() *SessionManager {
 	sm := SessionManager{}
-	sm.sessionmap = make(map[string]Session)
+	sm.sessionmap = make(map[string]*Session)
 	sm.maxLifeTime = 24 * 60 * 60 * 1000 * 1000 * 1000
 	go sm.GC()
 	return &sm
@@ -59,11 +59,27 @@ func (manager *SessionManager) CheckSession(ctx *gin.Context) {
 	}
 }
 
+//SetSessionToken set the token for the session
+func (manager *SessionManager) SetSessionToken(id string, token string) {
+	val, ok := manager.sessionmap[id]
+	if ok {
+		val.Token = token
+	}
+}
+
+//SetSessionName sets the name for the session login
+func (manager *SessionManager) SetSessionName(id string, name string) {
+	val, ok := manager.sessionmap[id]
+	if ok {
+		val.Name = name
+	}
+}
+
 //GetSession returns a session for the id or an error
-func (manager *SessionManager) GetSession(id string) (Session, error) {
+func (manager *SessionManager) GetSession(id string) (*Session, error) {
 	val, ok := manager.sessionmap[id]
 	if !ok {
-		return Session{}, errors.New("session: " + id + " is not present")
+		return &Session{}, errors.New("session: " + id + " is not present")
 	}
 	return val, nil
 }
@@ -86,6 +102,6 @@ func (manager *SessionManager) MakeSessionID() string {
 	}
 	encID := base64.URLEncoding.EncodeToString(ID)
 	session := Session{Token: "", ID: encID, expiryDate: time.Now().UnixNano() - manager.maxLifeTime}
-	manager.sessionmap[encID] = session
+	manager.sessionmap[encID] = &session
 	return session.ID
 }

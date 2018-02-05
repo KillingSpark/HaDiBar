@@ -58,7 +58,7 @@ func main() {
 	})
 
 	bc := beverages.NewBeverageController()
-	ac := accounts.NewAccountController()
+	ac := accounts.NewAccountController(SessMan)
 	lc := accounts.NewLoginController(SessMan)
 
 	//router.Use(sessMan.CheckSession)

@@ -31,13 +31,8 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\", \"reponse\":\"credentials rejected\"")
 	} else {
 		sessionID := ctx.Request.Header.Get("sessionID")
-		session, err := controller.sessionservice.GetSession(sessionID)
-		if err != nil {
-			fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\"")
-			return
-		}
-		session.Token = tk
-		session.Name = name
+		controller.sessionservice.SetSessionToken(sessionID, tk)
+		controller.sessionservice.SetSessionName(sessionID, name)
 		fmt.Fprint(ctx.Writer, "{\"status\":\"OK\"}")
 	}
 }
