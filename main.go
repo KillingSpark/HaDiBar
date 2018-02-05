@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"log"
@@ -15,8 +16,12 @@ import (
 	"github.com/killingspark/HaDiBar/settings"
 )
 
+var (
+	sessMan = sessions.NewSessionManager()
+)
+
 //making routes seperate for better readability
-func makeBeverageRoutes(router *gin.Engine, bc *beverages.BeverageController) {
+func makeBeverageRoutes(router *gin.RouterGroup, bc *beverages.BeverageController) {
 	bevGroup := router.Group("/beverage")
 	bevGroup.GET("/get", bc.GetBeverage)
 	bevGroup.POST("/update", bc.UpdateBeverage)
@@ -25,18 +30,18 @@ func makeBeverageRoutes(router *gin.Engine, bc *beverages.BeverageController) {
 	bevGroup.GET("/all", bc.GetBeverages)
 }
 
-func makeAccountRoutes(router *gin.Engine, ac *accounts.AccountController) {
+func makeAccountRoutes(router *gin.RouterGroup, ac *accounts.AccountController) {
 	accGroup := router.Group("/account")
 	accGroup.GET("/all", ac.GetAccounts)
 	accGroup.GET("/get", ac.GetAccount)
 	accGroup.POST("/update", ac.UpdateAccount)
 }
 
-func makeLoginRoutes(router *gin.Engine, lc *accounts.LoginController) {
+func makeLoginRoutes(router *gin.RouterGroup, lc *accounts.LoginController) {
 	router.POST("/session/login", lc.Login)
 	router.POST("/session/logout", lc.LogOut)
 	//used to get an initial session id if wished
-	router.GET("/session", func(c *gin.Context) {})
+	router.GET("/session/getid", func(ctx *gin.Context) { fmt.Fprint(ctx.Writer, sessMan.MakeSessionID()) })
 }
 
 func main() {
@@ -52,16 +57,18 @@ func main() {
 		ctx.Redirect(300, settings.S.WebappRoute)
 	})
 
-	sessMan := sessions.NewSessionManager()
 	bc := beverages.NewBeverageController()
 	ac := accounts.NewAccountController()
 	lc := accounts.NewLoginController(sessMan)
 
-	router.Use(sessMan.CheckSession)
+	//router.Use(sessMan.CheckSession)
+	apiGroup := router.Group("/api")
+	floorSpecificGroup := apiGroup.Group("/f/:floor")
+	floorSpecificGroup.Use(sessMan.CheckSession)
 
-	makeBeverageRoutes(router, bc)
-	makeAccountRoutes(router, ac)
-	makeLoginRoutes(router, lc)
+	makeBeverageRoutes(floorSpecificGroup, bc)
+	makeAccountRoutes(floorSpecificGroup, ac)
+	makeLoginRoutes(apiGroup, lc)
 
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(settings.S.Port), router))
 }
