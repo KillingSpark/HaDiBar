@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	sessMan = sessions.NewSessionManager()
+	SessMan = sessions.NewSessionManager()
 )
 
 //making routes seperate for better readability
@@ -41,7 +41,7 @@ func makeLoginRoutes(router *gin.RouterGroup, lc *accounts.LoginController) {
 	router.POST("/session/login", lc.Login)
 	router.POST("/session/logout", lc.LogOut)
 	//used to get an initial session id if wished
-	router.GET("/session/getid", func(ctx *gin.Context) { fmt.Fprint(ctx.Writer, sessMan.MakeSessionID()) })
+	router.GET("/session/getid", func(ctx *gin.Context) { fmt.Fprint(ctx.Writer, SessMan.MakeSessionID()) })
 }
 
 func main() {
@@ -59,12 +59,12 @@ func main() {
 
 	bc := beverages.NewBeverageController()
 	ac := accounts.NewAccountController()
-	lc := accounts.NewLoginController(sessMan)
+	lc := accounts.NewLoginController(SessMan)
 
 	//router.Use(sessMan.CheckSession)
 	apiGroup := router.Group("/api")
 	floorSpecificGroup := apiGroup.Group("/f/:floor")
-	floorSpecificGroup.Use(sessMan.CheckSession)
+	floorSpecificGroup.Use(SessMan.CheckSession)
 
 	makeBeverageRoutes(floorSpecificGroup, bc)
 	makeAccountRoutes(floorSpecificGroup, ac)

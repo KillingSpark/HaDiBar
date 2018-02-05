@@ -30,12 +30,12 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 	if !ok {
 		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\", \"reponse\":\"credentials rejected\"")
 	} else {
-		var ses, ok = ctx.Get("session")
-		if !ok {
+		sessionID := ctx.Request.Header.Get("sessionID")
+		session, err := controller.sessionservice.GetSession(sessionID)
+		if err != nil {
 			fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\"")
 			return
 		}
-		session := ses.(sessions.Session)
 		session.Token = tk
 		session.Name = name
 		fmt.Fprint(ctx.Writer, "{\"status\":\"OK\"}")
