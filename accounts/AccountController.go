@@ -59,13 +59,18 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 	if err != nil {
 		enc, _ := json.Marshal(restapi.Response{Status: "ERROR", Response: err.Error()})
 		fmt.Fprint(ctx.Writer, string(enc))
+		ctx.Abort()
+		return
 	}
 
 	acc, err := controller.service.UpdateAccount(session.Token, int64(ID), value)
 	if err != nil {
 		enc, _ := json.Marshal(restapi.Response{Status: "ERROR", Response: err.Error()})
 		fmt.Fprint(ctx.Writer, string(enc))
+		ctx.Abort()
+		return
 	}
 	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: acc})
 	fmt.Fprint(ctx.Writer, string(enc))
+	ctx.Next()
 }
