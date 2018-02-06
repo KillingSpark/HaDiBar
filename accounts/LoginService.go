@@ -37,10 +37,6 @@ func (service *LoginService) GetEntityFromToken(tokenval string) (Entity, bool) 
 
 	ent := service.tokenmap[tokenval]
 
-	if &ent == nil {
-
-	}
-
 	return ent, true
 }
 
@@ -73,7 +69,9 @@ func (service *LoginService) RequestToken(name, password string) (string, bool) 
 		return "", false
 	}
 	enctokenstring := base64.URLEncoding.EncodeToString(tokenstring)
-	service.tokens = append(service.tokens, makeToken(enctokenstring))
+	tokenval := makeToken(enctokenstring)
+	service.tokens = append(service.tokens, tokenval)
+	service.tokenmap[enctokenstring] = Entity{Name: name, Floor: "m6"}
 
 	return enctokenstring, true
 }

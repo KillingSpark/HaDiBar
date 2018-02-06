@@ -20,6 +20,7 @@ type Session struct {
 	Token      string
 	ID         string
 	Name       string
+	Floor      string
 	expiryDate int64
 }
 
@@ -99,6 +100,14 @@ func (manager *SessionManager) SetSessionToken(id string, token string) {
 	val, ok := manager.sessionmap[id]
 	if ok {
 		val.Token = token
+	}
+}
+
+//SetSessionFloor set the token for the session
+func (manager *SessionManager) SetSessionFloor(id string, floor string) {
+	val, ok := manager.sessionmap[id]
+	if ok {
+		val.Floor = floor
 	}
 }
 

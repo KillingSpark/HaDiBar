@@ -63,7 +63,7 @@ func main() {
 
 	//router.Use(sessMan.CheckSession)
 	apiGroup := router.Group("/api")
-	floorSpecificGroup := apiGroup.Group("/f/:floor")
+	floorSpecificGroup := apiGroup.Group("/f")
 	floorSpecificGroup.Use(SessMan.CheckSession)
 	floorSpecificGroup.Use(SessMan.CheckLoginStatus)
 

@@ -28,6 +28,9 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 
 	logger.Logger.Debug("Requesting token for: " + name)
 	var tk, ok = controller.loginservice.RequestToken(name, password)
+	entity, _ := controller.loginservice.GetEntityFromToken(tk)
+	floor := entity.Floor
+
 	if !ok {
 		response, _ := restapi.NewErrorResponse("credentials rejected").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
@@ -35,6 +38,7 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 	} else {
 		controller.sesMan.SetSessionToken(sessionID, tk)
 		controller.sesMan.SetSessionName(sessionID, name)
+		controller.sesMan.SetSessionFloor(sessionID, floor)
 		response, _ := restapi.NewOkResponse("").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		logger.Logger.Debug(sessionID + " logged in as: " + name)
@@ -46,6 +50,7 @@ func (controller *LoginController) LogOut(ctx *gin.Context) {
 	sessionID := ctx.Request.Header.Get("sessionID")
 	controller.sesMan.SetSessionToken(sessionID, "")
 	controller.sesMan.SetSessionName(sessionID, "")
+	controller.sesMan.SetSessionFloor(sessionID, "")
 	response, _ := restapi.NewOkResponse("").Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 

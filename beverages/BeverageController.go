@@ -92,5 +92,4 @@ func (controller *BeverageController) DeleteBeverage(ctx *gin.Context) {
 		response, _ := restapi.NewErrorResponse("").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 	}
-
 }
