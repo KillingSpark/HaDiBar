@@ -4,12 +4,14 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/HaDiBar/logger"
+	"github.com/killingspark/HaDiBar/restapi"
 )
 
 //Session represents a Session
@@ -55,7 +57,9 @@ func (manager *SessionManager) CheckSession(ctx *gin.Context) {
 		ctx.Next()
 	} else {
 		logger.Logger.Warning(err.Error())
-		ctx.Writer.WriteString("{\"status\":\"ERROR\", \"response\":\"invalid session\"")
+		response, _ := restapi.NewErrorResponse("No valid session").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
 	}
 }
 

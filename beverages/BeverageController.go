@@ -1,8 +1,6 @@
 package beverages
 
 import (
-	"encoding/json"
-
 	"fmt"
 
 	"strconv"
@@ -26,8 +24,13 @@ func NewBeverageController() *BeverageController {
 
 //GetBeverages responds with all existing Beverages
 func (controller *BeverageController) GetBeverages(ctx *gin.Context) {
-	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: controller.service.GetBeverages()})
-	fmt.Fprint(ctx.Writer, string(enc))
+	response, err := restapi.NewOkResponse(controller.service.GetBeverages()).Marshal()
+	if err != nil {
+		errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage array").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+	} else {
+		fmt.Fprint(ctx.Writer, string(response))
+	}
 }
 
 //GetBeverage responds with the beverage identified by beverage/:id
@@ -36,10 +39,16 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 
 	bev, ok := controller.service.GetBeverage(ID)
 	if ok {
-		enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: bev})
-		fmt.Fprint(ctx.Writer, string(enc))
+		response, err := restapi.NewOkResponse(bev).Marshal()
+		if err != nil {
+			errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage object").Marshal()
+			fmt.Fprint(ctx.Writer, string(errResp))
+		} else {
+			fmt.Fprint(ctx.Writer, string(response))
+		}
 	} else {
-		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\"}")
+		response, _ := restapi.NewErrorResponse("").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
 	}
 }
 
@@ -47,9 +56,13 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 	nv, _ := strconv.Atoi(ctx.PostForm("value"))
 	nb, _ := controller.service.NewBeverage(ctx.PostForm("name"), nv)
-	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: nb})
-
-	fmt.Fprint(ctx.Writer, string(enc))
+	response, err := restapi.NewOkResponse(nb).Marshal()
+	if err != nil {
+		errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage object").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+	} else {
+		fmt.Fprint(ctx.Writer, string(response))
+	}
 }
 
 //UpdateBeverage updates the beverage identified by /beverage/:id with the given form-values "value" and "name" and returns it
@@ -59,9 +72,13 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 	nv, _ := strconv.Atoi(ctx.PostForm("value"))
 	nn := ctx.PostForm("name")
 	nb, _ := controller.service.UpdateBeverage(ID, nn, nv)
-	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: nb})
-
-	fmt.Fprint(ctx.Writer, string(enc))
+	response, err := restapi.NewOkResponse(nb).Marshal()
+	if err != nil {
+		errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage object").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+	} else {
+		fmt.Fprint(ctx.Writer, string(response))
+	}
 }
 
 //DeleteBeverage deletes the beverage identified by /beverage/:id and responds with a YEP/NOPE
@@ -69,9 +86,11 @@ func (controller *BeverageController) DeleteBeverage(ctx *gin.Context) {
 	ID, _ := ctx.GetQuery("id")
 
 	if controller.service.DeleteBeverage(ID) {
-		fmt.Fprint(ctx.Writer, "{\"status\":\"OK\"}")
+		response, _ := restapi.NewOkResponse("").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
 	} else {
-		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\"}")
+		response, _ := restapi.NewErrorResponse("").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
 	}
 
 }

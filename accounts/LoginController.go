@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/HaDiBar/logger"
+	"github.com/killingspark/HaDiBar/restapi"
 	"github.com/killingspark/HaDiBar/sessions"
 )
 
@@ -28,25 +29,23 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 	var tk, ok = controller.loginservice.RequestToken(name, password)
 	logger.Logger.Debug("Received token for: " + name + " : " + tk)
 	if !ok {
-		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\", \"reponse\":\"credentials rejected\"")
+		response, _ := restapi.NewErrorResponse("credentials rejected").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
 	} else {
 		sessionID := ctx.Request.Header.Get("sessionID")
 		controller.sessionservice.SetSessionToken(sessionID, tk)
 		controller.sessionservice.SetSessionName(sessionID, name)
-		fmt.Fprint(ctx.Writer, "{\"status\":\"OK\"}")
+		response, _ := restapi.NewOkResponse("").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
 	}
 }
 
 //LogOut uncouples the usersession from a token
 func (controller *LoginController) LogOut(ctx *gin.Context) {
 	sessionID := ctx.Request.Header.Get("sessionID")
-	session, err := controller.sessionservice.GetSession(sessionID)
-	if err != nil {
-		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\"")
-		return
-	}
 
-	session.Token = ""
-	session.Name = ""
-	fmt.Fprint(ctx.Writer, "{\"status\":\"OK\"}")
+	controller.sessionservice.SetSessionToken(sessionID, "")
+	controller.sessionservice.SetSessionName(sessionID, "")
+	response, _ := restapi.NewOkResponse("").Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
 }

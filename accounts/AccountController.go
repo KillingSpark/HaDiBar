@@ -1,7 +1,6 @@
 package accounts
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/killingspark/HaDiBar/sessions"
@@ -28,16 +27,16 @@ func NewAccountController(sm *sessions.SessionManager) *AccountController {
 
 //GetAccounts gets all existing accounts
 func (controller *AccountController) GetAccounts(ctx *gin.Context) {
-	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: controller.service.GetAccounts()})
-	fmt.Fprint(ctx.Writer, string(enc))
+	response, _ := restapi.NewOkResponse(controller.service.GetAccounts()).Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
 }
 
 //GetAccount returns the account identified by account/:id
 func (controller *AccountController) GetAccount(ctx *gin.Context) {
 	strID, _ := ctx.GetQuery("id")
 	ID, _ := strconv.Atoi(strID)
-	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: controller.service.GetAccount(int64(ID))})
-	fmt.Fprint(ctx.Writer, string(enc))
+	response, _ := restapi.NewOkResponse(controller.service.GetAccount(int64(ID))).Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
 }
 
 //UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
@@ -46,31 +45,35 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 	ID, err := strconv.Atoi(strID)
 
 	if err != nil {
-		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\", \"reponse\":\"id is NaN\"}")
+		response, _ := restapi.NewErrorResponse("No valid account id").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
 		return
 	}
 	value, err := strconv.Atoi(ctx.PostForm("value"))
 	if err != nil {
-		fmt.Fprint(ctx.Writer, "{\"status\":\"ERROR\", \"reponse\":\"value is NaN\"}")
+		response, _ := restapi.NewErrorResponse("No valid diff value").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
 		return
 	}
 	sessionID := ctx.Request.Header.Get("sessionID")
 	session, err := controller.sesMan.GetSession(sessionID)
 	if err != nil {
-		enc, _ := json.Marshal(restapi.Response{Status: "ERROR", Response: err.Error()})
-		fmt.Fprint(ctx.Writer, string(enc))
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return
 	}
 
 	acc, err := controller.service.UpdateAccount(session.Token, int64(ID), value)
 	if err != nil {
-		enc, _ := json.Marshal(restapi.Response{Status: "ERROR", Response: err.Error()})
-		fmt.Fprint(ctx.Writer, string(enc))
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return
 	}
-	enc, _ := json.Marshal(restapi.Response{Status: "OK", Response: acc})
-	fmt.Fprint(ctx.Writer, string(enc))
+	response, _ := restapi.NewOkResponse(acc).Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
 }
