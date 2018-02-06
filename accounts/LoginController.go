@@ -17,7 +17,7 @@ type LoginController struct {
 
 //NewLoginController creates a new LoginController and initializes the service
 func NewLoginController(aSs *sessions.SessionManager) *LoginController {
-	return &LoginController{loginservice: &LoginService{}, sesMan: aSs}
+	return &LoginController{loginservice: NewLoginService(), sesMan: aSs}
 }
 
 //Login returns a new token if the credentials (in the formvalues) "name" and "password" are valid

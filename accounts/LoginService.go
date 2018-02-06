@@ -26,6 +26,12 @@ type LoginService struct {
 	tokens   []token
 }
 
+func NewLoginService() *LoginService {
+	lgSrv := &LoginService{}
+	lgSrv.tokenmap = make(map[string]Entity)
+	return lgSrv
+}
+
 //GetEntityFromToken returns the entity that belongs to the token. If the token is invalid/expired the boolean
 //is going to be false
 func (service *LoginService) GetEntityFromToken(tokenval string) (Entity, bool) {
