@@ -65,6 +65,7 @@ func main() {
 	apiGroup := router.Group("/api")
 	floorSpecificGroup := apiGroup.Group("/f/:floor")
 	floorSpecificGroup.Use(SessMan.CheckSession)
+	floorSpecificGroup.Use(SessMan.CheckLoginStatus)
 
 	makeBeverageRoutes(floorSpecificGroup, bc)
 	makeAccountRoutes(floorSpecificGroup, ac)

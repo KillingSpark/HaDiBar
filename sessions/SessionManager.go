@@ -38,6 +38,37 @@ func NewSessionManager() *SessionManager {
 	return &sm
 }
 
+//IsSessionLoggedIn checks wether the given session should be seen as logged in
+func (manager *SessionManager) IsSessionLoggedIn(sessionID string) bool {
+	session, err := manager.GetSession(sessionID)
+
+	if err != nil {
+		logger.Logger.Debug(sessionID + " tried access but isnt valid")
+		return false
+	}
+
+	if session.Token != "" && session.Name != "" {
+		return true
+	}
+
+	logger.Logger.Debug(sessionID + " tried to login but isnt logged in")
+	return false
+}
+
+//CheckLoginStatus checks if the session is logged in and then executes the given handle
+func (manager *SessionManager) CheckLoginStatus(ctx *gin.Context) {
+	var sessionID = ctx.Request.Header.Get("sessionID")
+	if manager.IsSessionLoggedIn(sessionID) {
+		logger.Logger.Debug("Logincheck good for: " + sessionID)
+		ctx.Next()
+	} else {
+		logger.Logger.Warning("Logincheck bad for: " + sessionID)
+		response, _ := restapi.NewErrorResponse("You must be logged in here").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+	}
+}
+
 //CheckSession checks if the token is valid and then executes the given handle
 func (manager *SessionManager) CheckSession(ctx *gin.Context) {
 	var sessionID = ctx.Request.Header.Get("sessionID")
@@ -46,7 +77,7 @@ func (manager *SessionManager) CheckSession(ctx *gin.Context) {
 		logger.Logger.Debug("no session header found. Adding new one")
 		sessionID = manager.MakeSessionID()
 	} else {
-		logger.Logger.Debug("call from session: " + sessionID)
+		logger.Logger.Debug("call from session: " + sessionID + " to URL: " + ctx.Request.URL.RawPath)
 	}
 
 	//headers get written by gin
@@ -91,11 +122,15 @@ func (manager *SessionManager) GetSession(id string) (*Session, error) {
 //GC Starts the garbage collection for expired sessions
 func (manager *SessionManager) GC() {
 	for key, ses := range manager.sessionmap {
-		if time.Now().UnixNano()-ses.expiryDate >= manager.maxLifeTime {
+		if manager.isExspired(ses.expiryDate) {
 			delete(manager.sessionmap, key)
 		}
 	}
 	time.AfterFunc(time.Duration(manager.maxLifeTime), manager.GC)
+}
+
+func (manager *SessionManager) isExspired(timestamp int64) bool {
+	return time.Now().UnixNano()-timestamp >= manager.maxLifeTime
 }
 
 //MakeSessionID creates a new Session and returns the ID

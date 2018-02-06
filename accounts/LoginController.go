@@ -11,41 +11,43 @@ import (
 
 //LoginController is the controller for the logins
 type LoginController struct {
-	loginservice   *LoginService
-	sessionservice *sessions.SessionManager
+	loginservice *LoginService
+	sesMan       *sessions.SessionManager
 }
 
 //NewLoginController creates a new LoginController and initializes the service
 func NewLoginController(aSs *sessions.SessionManager) *LoginController {
-	return &LoginController{loginservice: &LoginService{}, sessionservice: aSs}
+	return &LoginController{loginservice: &LoginService{}, sesMan: aSs}
 }
 
 //Login returns a new token if the credentials (in the formvalues) "name" and "password" are valid
 func (controller *LoginController) Login(ctx *gin.Context) {
 	name := ctx.PostForm("name")
 	password := ctx.PostForm("password")
+	sessionID := ctx.Request.Header.Get("sessionID")
 
 	logger.Logger.Debug("Requesting token for: " + name)
 	var tk, ok = controller.loginservice.RequestToken(name, password)
-	logger.Logger.Debug("Received token for: " + name + " : " + tk)
 	if !ok {
 		response, _ := restapi.NewErrorResponse("credentials rejected").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
+		logger.Logger.Debug(sessionID + " faild to log in as: " + name)
 	} else {
-		sessionID := ctx.Request.Header.Get("sessionID")
-		controller.sessionservice.SetSessionToken(sessionID, tk)
-		controller.sessionservice.SetSessionName(sessionID, name)
+		controller.sesMan.SetSessionToken(sessionID, tk)
+		controller.sesMan.SetSessionName(sessionID, name)
 		response, _ := restapi.NewOkResponse("").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
+		logger.Logger.Debug(sessionID + " logged in as: " + name)
 	}
 }
 
 //LogOut uncouples the usersession from a token
 func (controller *LoginController) LogOut(ctx *gin.Context) {
 	sessionID := ctx.Request.Header.Get("sessionID")
-
-	controller.sessionservice.SetSessionToken(sessionID, "")
-	controller.sessionservice.SetSessionName(sessionID, "")
+	controller.sesMan.SetSessionToken(sessionID, "")
+	controller.sesMan.SetSessionName(sessionID, "")
 	response, _ := restapi.NewOkResponse("").Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
+
+	logger.Logger.Debug(sessionID + " logged out")
 }
