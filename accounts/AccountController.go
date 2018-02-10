@@ -3,25 +3,24 @@ package accounts
 import (
 	"fmt"
 
-	"github.com/killingspark/HaDiBar/sessions"
-
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/killingspark/HaDiBar/authStuff"
 	"github.com/killingspark/HaDiBar/restapi"
 )
 
 //AccountController is the controller for accounts
 type AccountController struct {
 	service *AccountService
-	sesMan  *sessions.SessionManager
+	auth    *authStuff.Auth
 }
 
 //NewAccountController creates a new AccountController and initializes the service
-func NewAccountController(sm *sessions.SessionManager) *AccountController {
+func NewAccountController(auth *authStuff.Auth) *AccountController {
 	var acC AccountController
 	acC.service = NewAccountService()
-	acC.sesMan = sm
+	acC.auth = auth
 	return &acC
 }
 
@@ -58,7 +57,7 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 		return
 	}
 	sessionID := ctx.Request.Header.Get("sessionID")
-	session, err := controller.sesMan.GetSession(sessionID)
+	info, err := controller.auth.GetSessionInfo(sessionID)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
@@ -66,7 +65,7 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 		return
 	}
 
-	acc, err := controller.service.UpdateAccount(session.Token, int64(ID), value)
+	acc, err := controller.service.UpdateAccount(info, int64(ID), value)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))

@@ -3,6 +3,8 @@ package accounts
 import (
 	"errors"
 	"strconv"
+
+	"github.com/killingspark/HaDiBar/authStuff"
 )
 
 //AccountService is a service for accessing accounts
@@ -15,7 +17,7 @@ func NewAccountService() *AccountService {
 	var acs AccountService
 
 	for i := 0; i < 10; i++ {
-		acc := Account{ID: int64(i), Owner: Entity{ID: int64(1337 + i), Name: "Moritz" + strconv.Itoa(i)}, Value: 4242}
+		acc := Account{ID: int64(i), Value: 4242, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
 		acs.accounts = append(acs.accounts, acc)
 	}
 	return &acs
@@ -32,9 +34,9 @@ func (service *AccountService) GetAccount(aID int64) Account {
 }
 
 //UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) UpdateAccount(userToken string, aID int64, aValue int) (Account, error) {
-	if userToken == "" {
-		return Account{}, errors.New("no token provided")
+func (service *AccountService) UpdateAccount(logininfo authStuff.LoginInfo, aID int64, aValue int) (Account, error) {
+	if !logininfo.LoggedIn {
+		return Account{}, errors.New("not logged in")
 	}
 	service.accounts[aID].Value += aValue
 	return service.accounts[aID], nil
