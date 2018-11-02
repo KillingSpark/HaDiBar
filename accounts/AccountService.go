@@ -37,7 +37,17 @@ func dummyAccs() []Account {
 	return accs
 }
 
-func (service *AccountService) load() error {
+func (service *AccountService) Add(new *Account) error {
+	for _, acc := range service.accounts {
+		if acc.ID == new.ID {
+			return errors.New("AccounID already taken")
+		}
+	}
+	service.accounts = append(service.accounts, *new)
+	return nil
+}
+
+func (service *AccountService) Load() error {
 	jsonFile, err := os.Open(service.path)
 	// if we os.Open returns an error then handle it
 	if err != nil {
@@ -56,7 +66,7 @@ func (service *AccountService) load() error {
 	return nil
 }
 
-func (service *AccountService) save() error {
+func (service *AccountService) Save() error {
 	jsonFile, err := os.OpenFile(service.path, os.O_RDWR, 0)
 	// if we os.Open returns an error then handle it
 	if err != nil {
@@ -79,7 +89,7 @@ func (service *AccountService) save() error {
 
 //GetAccounts returns all accounts that are part of this group
 func (service *AccountService) GetAccounts(groupID string) []Account {
-	err := service.load()
+	err := service.Load()
 	if err != nil {
 		return nil
 	}
@@ -98,7 +108,7 @@ func (service *AccountService) GetAccounts(groupID string) []Account {
 
 //GetAccount returns the account indentified by accounts/:id
 func (service *AccountService) GetAccount(aID int64) Account {
-	err := service.load()
+	err := service.Load()
 	if err != nil {
 		return Account{}
 	}
@@ -111,7 +121,7 @@ func (service *AccountService) UpdateAccount(logininfo *authStuff.LoginInfo, aID
 		return Account{}, errors.New("not logged in")
 	}
 	service.accounts[aID].Value += aValue
-	err := service.save()
+	err := service.Save()
 	if err != nil {
 		return Account{}, err
 	}
