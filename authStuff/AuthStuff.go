@@ -67,7 +67,6 @@ func (auth *Auth) LogIn(id, name, password string) error {
 	newinfo, err := auth.tester.isValid(name, password)
 
 	if err != nil {
-		panic(err.Error())
 		return err
 	}
 
