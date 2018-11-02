@@ -6,6 +6,7 @@ import (
 	"errors"
 	"hash"
 	"io/ioutil"
+	"math"
 	"os"
 
 	"github.com/killingspark/HaDiBar/settings"
@@ -82,7 +83,7 @@ var ErrWrongCredetials = errors.New("Wrong creds for username")
 func SaltPw(hasher hash.Hash, pw, salt string) string {
 	hasher.Reset()
 	hasher.Write([]byte(pw + salt))
-	saltedpw := make([]byte, 1024)
+	saltedpw := make([]byte, 4*int(math.Ceil((float64(32)/3))))
 
 	base64.StdEncoding.Encode(saltedpw, hasher.Sum(nil))
 	return string(saltedpw)
