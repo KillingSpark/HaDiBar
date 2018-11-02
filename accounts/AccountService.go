@@ -34,7 +34,7 @@ func (service *AccountService) GetAccount(aID int64) Account {
 }
 
 //UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) UpdateAccount(logininfo authStuff.LoginInfo, aID int64, aValue int) (Account, error) {
+func (service *AccountService) UpdateAccount(logininfo *authStuff.LoginInfo, aID int64, aValue int) (Account, error) {
 	if !logininfo.LoggedIn {
 		return Account{}, errors.New("not logged in")
 	}

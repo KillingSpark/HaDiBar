@@ -16,20 +16,28 @@ import (
 type LoginInfo struct {
 	Name     string
 	LoggedIn bool
+	Salt     string
+	Pwhash   string
+}
+
+type Authentikator interface {
+	isValid(id, pw string) (*LoginInfo, error)
 }
 
 type Session struct {
 	id   string
-	info LoginInfo
+	info *LoginInfo
 }
 
 type Auth struct {
 	sessionMap map[string](*Session)
+	tester     Authentikator
 }
 
 func NewAuth() *Auth {
 	auth := &Auth{}
 	auth.sessionMap = make(map[string](*Session))
+	auth.tester = NewJsonUserDatabase()
 	return auth
 }
 
@@ -51,13 +59,14 @@ func (auth *Auth) LogIn(id, name, password string) error {
 		return errors.New("Session not valid")
 	}
 
-	if session.info.LoggedIn {
+	if session.info != nil && session.info.LoggedIn {
 		return errors.New("Already logged in")
 	}
 
-	newinfo, err := auth.connectToRemote(name, password)
+	newinfo, err := auth.tester.isValid(name, password)
 
 	if err != nil {
+		panic(err.Error())
 		return err
 	}
 
@@ -67,16 +76,12 @@ func (auth *Auth) LogIn(id, name, password string) error {
 	return nil
 }
 
-func (auth *Auth) GetSessionInfo(id string) (LoginInfo, error) {
+func (auth *Auth) GetSessionInfo(id string) (*LoginInfo, error) {
 	session, err := auth.getSession(id)
 	if err != nil {
-		return LoginInfo{}, err
+		return nil, err
 	}
 	return session.info, nil
-}
-
-func (auth *Auth) connectToRemote(name, password string) (LoginInfo, error) {
-	return LoginInfo{}, nil
 }
 
 func (auth *Auth) LogOut(id string) error {
@@ -85,7 +90,7 @@ func (auth *Auth) LogOut(id string) error {
 		return errors.New("Session not valid")
 	}
 
-	session.info = LoginInfo{LoggedIn: false}
+	session.info = &LoginInfo{LoggedIn: false}
 	return nil
 }
 
