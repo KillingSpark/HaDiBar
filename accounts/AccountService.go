@@ -1,7 +1,10 @@
 package accounts
 
 import (
+	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"os"
 	"strconv"
 
 	"github.com/killingspark/HaDiBar/authStuff"
@@ -10,26 +13,94 @@ import (
 //AccountService is a service for accessing accounts
 type AccountService struct {
 	accounts []Account
+	path     string
 }
 
 //NewAccountService creates a AccountService and initialzes the Data
 func NewAccountService() *AccountService {
 	var acs AccountService
-
-	for i := 0; i < 10; i++ {
-		acc := Account{ID: int64(i), Value: 4242, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
-		acs.accounts = append(acs.accounts, acc)
-	}
+	acs.path = os.ExpandEnv("$HOME") + "/.cache/hadibaraccounts"
 	return &acs
 }
 
-//GetAccounts returns all accounts
-func (service *AccountService) GetAccounts() []Account {
-	return service.accounts
+func dummyAccs() []Account {
+	accs := make([]Account, 0)
+	for i := 0; i < 10; i++ {
+		acc := Account{ID: int64(i), Value: 4242, Group: AccountGroup{GroupID: "M6"}, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
+		accs = append(accs, acc)
+	}
+	for i := 0; i < 10; i++ {
+		acc := Account{ID: int64(i), Value: 4242, Group: AccountGroup{GroupID: "M5"}, Owner: AccountOwner{Name: "Paul" + strconv.Itoa(i)}}
+		accs = append(accs, acc)
+	}
+	return accs
+}
+
+func (service *AccountService) load() error {
+	jsonFile, err := os.Open(service.path)
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		return err
+	}
+	defer jsonFile.Close()
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal([]byte(byteValue), &service.accounts)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (service *AccountService) save() error {
+	jsonFile, err := os.OpenFile(service.path, os.O_RDWR, 0)
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		return err
+	}
+	defer jsonFile.Close()
+
+	enc, err := json.Marshal(service.accounts)
+	if err != nil {
+		return err
+	}
+
+	_, err = jsonFile.Write(enc)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//GetAccounts returns all accounts that are part of this group
+func (service *AccountService) GetAccounts(groupID string) []Account {
+	err := service.load()
+	if err != nil {
+		return nil
+	}
+	var res []Account
+	for _, acc := range service.accounts {
+		if acc.Group.GroupID == groupID {
+			res = append(res, acc)
+		}
+	}
+	println("results: " + strconv.Itoa(len(res)))
+	for _, acc := range res {
+		println(acc.Owner.Name)
+	}
+	return res
 }
 
 //GetAccount returns the account indentified by accounts/:id
 func (service *AccountService) GetAccount(aID int64) Account {
+	err := service.load()
+	if err != nil {
+		return Account{}
+	}
 	return service.accounts[aID]
 }
 
@@ -39,5 +110,9 @@ func (service *AccountService) UpdateAccount(logininfo *authStuff.LoginInfo, aID
 		return Account{}, errors.New("not logged in")
 	}
 	service.accounts[aID].Value += aValue
+	err := service.save()
+	if err != nil {
+		return Account{}, err
+	}
 	return service.accounts[aID], nil
 }

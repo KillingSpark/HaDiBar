@@ -15,6 +15,7 @@ import (
 //Entity (s) represent owners of an Account
 type LoginInfo struct {
 	Name     string
+	GroupID  string
 	LoggedIn bool
 	Salt     string
 	Pwhash   string
@@ -130,6 +131,7 @@ func (auth *Auth) CheckLoginStatus(ctx *gin.Context) {
 	}
 	if session.info != nil && session.info.LoggedIn {
 		logger.Logger.Debug("Logincheck good for: " + sessionID)
+		ctx.Set("logininfo", session.info)
 		ctx.Next()
 	} else {
 		logger.Logger.Warning("Logincheck bad for: " + sessionID)

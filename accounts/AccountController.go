@@ -26,8 +26,19 @@ func NewAccountController(auth *authStuff.Auth) *AccountController {
 
 //GetAccounts gets all existing accounts
 func (controller *AccountController) GetAccounts(ctx *gin.Context) {
-	response, _ := restapi.NewOkResponse(controller.service.GetAccounts()).Marshal()
-	fmt.Fprint(ctx.Writer, string(response))
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok := inter.(*authStuff.LoginInfo)
+		if ok {
+			response, _ := restapi.NewOkResponse(controller.service.GetAccounts(info.GroupID)).Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+		} else {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+		}
+	} else {
+		response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+	}
 }
 
 //GetAccount returns the account identified by account/:id
