@@ -12,6 +12,8 @@ import (
 type Settings struct {
 	Port         int    `json:"port"`
 	DBPath       string `json:"databasepath"`
+	AccountPath  string `json:"accountpath"`
+	UserPath     string `json:"userpath"`
 	WebappPath   string `json:"webapppath"`
 	WebappRoute  string `json:"webapproute"`
 	LoggingLevel string `json:"logginglevel"`

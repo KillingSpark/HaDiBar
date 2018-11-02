@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/killingspark/HaDiBar/settings"
+
 	"golang.org/x/crypto/sha3"
 )
 
@@ -20,7 +22,7 @@ type jsonUserDatabase struct {
 func NewJsonUserDatabase() *jsonUserDatabase {
 	db := &jsonUserDatabase{}
 	db.hasher = sha3.New256()
-	db.path = os.ExpandEnv("$HOME") + "/.cache/hadibarusers"
+	db.path = os.ExpandEnv(settings.S.UserPath)
 
 	return db
 }

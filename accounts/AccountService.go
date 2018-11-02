@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/killingspark/HaDiBar/authStuff"
+	"github.com/killingspark/HaDiBar/settings"
 )
 
 //AccountService is a service for accessing accounts
@@ -19,7 +20,7 @@ type AccountService struct {
 //NewAccountService creates a AccountService and initialzes the Data
 func NewAccountService() *AccountService {
 	var acs AccountService
-	acs.path = os.ExpandEnv("$HOME") + "/.cache/hadibaraccounts"
+	acs.path = os.ExpandEnv(settings.S.AccountPath)
 	return &acs
 }
 
