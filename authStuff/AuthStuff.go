@@ -128,7 +128,7 @@ func (auth *Auth) CheckLoginStatus(ctx *gin.Context) {
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 	}
-	if session.info.LoggedIn {
+	if session.info != nil && session.info.LoggedIn {
 		logger.Logger.Debug("Logincheck good for: " + sessionID)
 		ctx.Next()
 	} else {
