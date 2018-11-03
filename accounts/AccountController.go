@@ -43,9 +43,27 @@ func (controller *AccountController) GetAccounts(ctx *gin.Context) {
 
 //GetAccount returns the account identified by account/:id
 func (controller *AccountController) GetAccount(ctx *gin.Context) {
-	strID, _ := ctx.GetQuery("id")
-	ID, _ := strconv.Atoi(strID)
-	response, _ := restapi.NewOkResponse(controller.service.GetAccount(int64(ID))).Marshal()
+	strID, ok := ctx.GetQuery("id")
+	if !ok {
+		response, _ := restapi.NewErrorResponse("no id in path").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		return
+	}
+	ID, err := strconv.Atoi(strID)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse("ID is invalid").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		return
+	}
+
+	acc, err := controller.service.GetAccount(int64(ID))
+	if err != nil {
+		response, _ := restapi.NewErrorResponse("Error getting account: " + err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		return
+	}
+
+	response, _ := restapi.NewOkResponse(acc).Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 }
 

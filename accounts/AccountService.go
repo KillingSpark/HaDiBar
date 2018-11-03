@@ -13,7 +13,7 @@ import (
 
 //AccountService is a service for accessing accounts
 type AccountService struct {
-	accounts []Account
+	accounts []*Account
 	path     string
 }
 
@@ -24,14 +24,14 @@ func NewAccountService() *AccountService {
 	return &acs
 }
 
-func dummyAccs() []Account {
-	accs := make([]Account, 0)
+func dummyAccs() []*Account {
+	accs := make([]*Account, 0)
 	for i := 0; i < 10; i++ {
-		acc := Account{ID: int64(i), Value: 4242, Group: AccountGroup{GroupID: "M6"}, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
+		acc := &Account{ID: int64(i), Value: 4242, Group: AccountGroup{GroupID: "M6"}, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
 		accs = append(accs, acc)
 	}
 	for i := 0; i < 10; i++ {
-		acc := Account{ID: int64(i), Value: 4242, Group: AccountGroup{GroupID: "M5"}, Owner: AccountOwner{Name: "Paul" + strconv.Itoa(i)}}
+		acc := &Account{ID: int64(i), Value: 4242, Group: AccountGroup{GroupID: "M5"}, Owner: AccountOwner{Name: "Paul" + strconv.Itoa(i)}}
 		accs = append(accs, acc)
 	}
 	return accs
@@ -40,10 +40,10 @@ func dummyAccs() []Account {
 func (service *AccountService) Add(new *Account) error {
 	for _, acc := range service.accounts {
 		if acc.ID == new.ID {
-			return errors.New("AccounID already taken")
+			return errors.New("AccountID already taken")
 		}
 	}
-	service.accounts = append(service.accounts, *new)
+	service.accounts = append(service.accounts, new)
 	return nil
 }
 
@@ -88,42 +88,38 @@ func (service *AccountService) Save() error {
 }
 
 //GetAccounts returns all accounts that are part of this group
-func (service *AccountService) GetAccounts(groupID string) []Account {
+func (service *AccountService) GetAccounts(groupID string) []*Account {
 	err := service.Load()
 	if err != nil {
 		return nil
 	}
-	var res []Account
+	var res []*Account
 	for _, acc := range service.accounts {
 		if acc.Group.GroupID == groupID {
 			res = append(res, acc)
 		}
 	}
-	println("results: " + strconv.Itoa(len(res)))
-	for _, acc := range res {
-		println(acc.Owner.Name)
-	}
 	return res
 }
 
 //GetAccount returns the account indentified by accounts/:id
-func (service *AccountService) GetAccount(aID int64) Account {
+func (service *AccountService) GetAccount(aID int64) (*Account, error) {
 	err := service.Load()
 	if err != nil {
-		return Account{}
+		return nil, err
 	}
-	return service.accounts[aID]
+	return service.accounts[aID], nil
 }
 
 //UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) UpdateAccount(logininfo *authStuff.LoginInfo, aID int64, aValue int) (Account, error) {
+func (service *AccountService) UpdateAccount(logininfo *authStuff.LoginInfo, aID int64, aValue int) (*Account, error) {
 	if !logininfo.LoggedIn {
-		return Account{}, errors.New("not logged in")
+		return nil, errors.New("not logged in")
 	}
 	service.accounts[aID].Value += aValue
 	err := service.Save()
 	if err != nil {
-		return Account{}, err
+		return nil, err
 	}
 	return service.accounts[aID], nil
 }
