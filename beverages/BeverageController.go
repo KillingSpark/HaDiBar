@@ -7,24 +7,35 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/killingspark/HaDiBar/authStuff"
 	"github.com/killingspark/HaDiBar/restapi"
 )
 
 //BeverageController : Controller for the Beverages
 type BeverageController struct {
-	service *SQLiteBeverageService
+	service *BeverageService
 }
 
 //NewBeverageController creates a new BeverageController and initializes its service
 func NewBeverageController() *BeverageController {
 	var bc BeverageController
-	bc.service = NewSQLiteBeverageService()
+	bc.service = NewBeverageService()
 	return &bc
 }
 
 //GetBeverages responds with all existing Beverages
 func (controller *BeverageController) GetBeverages(ctx *gin.Context) {
-	response, err := restapi.NewOkResponse(controller.service.GetBeverages()).Marshal()
+	inter, _ := ctx.Get("logininfo")
+	info := inter.(*authStuff.LoginInfo)
+	bevs, err := controller.service.GetBeverages(info.GroupID)
+	if err != nil {
+		errResp, _ := restapi.NewErrorResponse("Couldnt get the beverage array").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
+
+	response, err := restapi.NewOkResponse(bevs).Marshal()
 	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage array").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
@@ -37,6 +48,8 @@ func (controller *BeverageController) GetBeverages(ctx *gin.Context) {
 
 //GetBeverage responds with the beverage identified by beverage/:id
 func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
+	inter, _ := ctx.Get("logininfo")
+	info := inter.(*authStuff.LoginInfo)
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
 		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
@@ -45,7 +58,7 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 		return
 	}
 
-	bev, err := controller.service.GetBeverage(ID)
+	bev, err := controller.service.GetBeverage(ID, info.GroupID)
 	if err == nil {
 		response, err := restapi.NewOkResponse(bev).Marshal()
 		if err != nil {
@@ -66,6 +79,8 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 
 //NewBeverage creates a new beverage with the given form-values "value" and "name" and returns it
 func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
+	inter, _ := ctx.Get("logininfo")
+	info := inter.(*authStuff.LoginInfo)
 	nv, err := strconv.Atoi(ctx.PostForm("value"))
 	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Invalid value").Marshal()
@@ -74,7 +89,7 @@ func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 		return
 	}
 
-	nb, err := controller.service.NewBeverage(ctx.PostForm("name"), nv)
+	nb, err := controller.service.NewBeverage(info.GroupID, ctx.PostForm("name"), nv)
 	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Couldnt save new beverage").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))

@@ -1,6 +1,6 @@
 {
     "port":8080,
-    "databasepath":"beverages.db",
+    "beveragepath":"beverages.json",
     "userpath":"users.json",
     "accountpath":"accounts.json",
     "webapppath":"webapp",

@@ -11,7 +11,7 @@ import (
 //Settings represents the settings from the settings.json file
 type Settings struct {
 	Port         int    `json:"port"`
-	DBPath       string `json:"databasepath"`
+	BeveragePath string `json:"beveragepath"`
 	AccountPath  string `json:"accountpath"`
 	UserPath     string `json:"userpath"`
 	WebappPath   string `json:"webapppath"`
@@ -21,7 +21,7 @@ type Settings struct {
 
 var (
 	//S singleton kinda
-	S = Settings{Port: 8080, DBPath: "beverages.db", WebappRoute: "/app", WebappPath: "webapp", LoggingLevel: "DEBUG"}
+	S = Settings{Port: 8080, BeveragePath: "beverages.json", WebappRoute: "/app", WebappPath: "webapp", LoggingLevel: "DEBUG"}
 )
 
 //ReadSettings reads the settings file and stores the values in settings.S
