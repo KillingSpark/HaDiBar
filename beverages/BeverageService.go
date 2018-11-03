@@ -18,7 +18,7 @@ type BeverageService struct {
 	beverages map[string]*Beverage
 }
 
-//NewBeverageService creates a new SQLiteService and initialises the database
+//NewBeverageService creates a new Service
 func NewBeverageService() *BeverageService {
 	bs := &BeverageService{}
 	bs.path = settings.S.BeveragePath

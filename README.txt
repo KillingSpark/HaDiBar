@@ -5,5 +5,4 @@ The definiton of said api can be found in another repo
 a reference implementation of a webapp that uses said API can be found in another repo
 
 Webapp made with Vuejs, JQuery and Bootstrap
-Database for the beverages is made with sqlite3
-Accounts will be handled by other project that isnt currently existing,the current implementation works with dummy accounts (link will be here)
+Accounts/Beverages/Users are stored in json files
