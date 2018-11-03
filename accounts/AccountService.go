@@ -12,7 +12,7 @@ import (
 
 //AccountService is a service for accessing accounts
 type AccountService struct {
-	accounts []*Account
+	accounts map[string]*Account
 	path     string
 }
 
@@ -26,11 +26,11 @@ func NewAccountService() *AccountService {
 func dummyAccs() []*Account {
 	accs := make([]*Account, 0)
 	for i := 0; i < 10; i++ {
-		acc := &Account{ID: int64(i), Value: 4242, Group: AccountGroup{GroupID: "M6"}, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
+		acc := &Account{ID: strconv.Itoa(i), Value: 4242, Group: AccountGroup{GroupID: "M6"}, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
 		accs = append(accs, acc)
 	}
 	for i := 0; i < 10; i++ {
-		acc := &Account{ID: int64(i), Value: 4242, Group: AccountGroup{GroupID: "M5"}, Owner: AccountOwner{Name: "Paul" + strconv.Itoa(i)}}
+		acc := &Account{ID: strconv.Itoa(i), Value: 4242, Group: AccountGroup{GroupID: "M5"}, Owner: AccountOwner{Name: "Paul" + strconv.Itoa(i)}}
 		accs = append(accs, acc)
 	}
 	return accs
@@ -44,7 +44,7 @@ func (service *AccountService) Add(new *Account) error {
 			return ErrIDAlreadyTaken
 		}
 	}
-	service.accounts = append(service.accounts, new)
+	service.accounts[new.ID] = new
 	return nil
 }
 
@@ -61,19 +61,21 @@ func (service *AccountService) Load() error {
 	}
 
 	if len(byteValue) == 0 { //empty file
-		service.accounts = make([]*Account, 0)
+		service.accounts = make(map[string]*Account)
 		return nil
 	}
 
 	err = json.Unmarshal([]byte(byteValue), &service.accounts)
 	if err != nil {
-		service.accounts = make([]*Account, 0)
+		service.accounts = make(map[string]*Account)
 		return err
 	}
 	return nil
 }
 
 func (service *AccountService) Save() error {
+	os.Remove(service.path)
+	os.Create(service.path)
 	jsonFile, err := os.OpenFile(service.path, os.O_RDWR, 0)
 	// if we os.Open returns an error then handle it
 	if err != nil {
@@ -110,7 +112,7 @@ func (service *AccountService) GetAccounts(groupID string) []*Account {
 }
 
 //GetAccount returns the account indentified by accounts/:id
-func (service *AccountService) GetAccount(aID int64) (*Account, error) {
+func (service *AccountService) GetAccount(aID string) (*Account, error) {
 	err := service.Load()
 	if err != nil {
 		return nil, err
@@ -119,7 +121,7 @@ func (service *AccountService) GetAccount(aID int64) (*Account, error) {
 }
 
 //UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) UpdateAccount(aID int64, aValue int) (*Account, error) {
+func (service *AccountService) UpdateAccount(aID string, aValue int) (*Account, error) {
 	service.accounts[aID].Value += aValue
 	err := service.Save()
 	if err != nil {

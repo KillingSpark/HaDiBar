@@ -45,8 +45,8 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 		return
 	}
 
-	bev, ok := controller.service.GetBeverage(ID)
-	if ok {
+	bev, err := controller.service.GetBeverage(ID)
+	if err == nil {
 		response, err := restapi.NewOkResponse(bev).Marshal()
 		if err != nil {
 			errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage object").Marshal()
@@ -57,7 +57,7 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Next()
 	} else {
-		response, _ := restapi.NewErrorResponse("").Marshal()
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return
@@ -74,8 +74,8 @@ func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 		return
 	}
 
-	nb, ok := controller.service.NewBeverage(ctx.PostForm("name"), nv)
-	if !ok {
+	nb, err := controller.service.NewBeverage(ctx.PostForm("name"), nv)
+	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Couldnt save new beverage").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -110,8 +110,8 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 		return
 	}
 	nn := ctx.PostForm("name")
-	nb, ok := controller.service.UpdateBeverage(ID, nn, nv)
-	if !ok {
+	nb, err := controller.service.UpdateBeverage(ID, nn, nv)
+	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Couldnt update beverage").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -139,12 +139,12 @@ func (controller *BeverageController) DeleteBeverage(ctx *gin.Context) {
 		return
 	}
 
-	if controller.service.DeleteBeverage(ID) {
+	if err := controller.service.DeleteBeverage(ID); err == nil {
 		response, _ := restapi.NewOkResponse("").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Next()
 	} else {
-		response, _ := restapi.NewErrorResponse("").Marshal()
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return

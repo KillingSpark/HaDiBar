@@ -46,22 +46,15 @@ func (controller *AccountController) GetAccounts(ctx *gin.Context) {
 
 //GetAccount returns the account identified by account/:id
 func (controller *AccountController) GetAccount(ctx *gin.Context) {
-	strID, ok := ctx.GetQuery("id")
+	ID, ok := ctx.GetQuery("id")
 	if !ok {
 		response, _ := restapi.NewErrorResponse("no id in path").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return
 	}
-	ID, err := strconv.Atoi(strID)
-	if err != nil {
-		response, _ := restapi.NewErrorResponse("ID is invalid").Marshal()
-		fmt.Fprint(ctx.Writer, string(response))
-		ctx.Abort()
-		return
-	}
 
-	acc, err := controller.service.GetAccount(int64(ID))
+	acc, err := controller.service.GetAccount(ID)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse("Error getting account: " + err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
@@ -76,7 +69,7 @@ func (controller *AccountController) GetAccount(ctx *gin.Context) {
 
 //UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
 func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
-	strID, ok := ctx.GetQuery("id")
+	ID, ok := ctx.GetQuery("id")
 	if !ok {
 		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
@@ -84,14 +77,6 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 		return
 	}
 
-	ID, err := strconv.Atoi(strID)
-
-	if err != nil {
-		response, _ := restapi.NewErrorResponse("No valid account id").Marshal()
-		fmt.Fprint(ctx.Writer, string(response))
-		ctx.Abort()
-		return
-	}
 	value, err := strconv.Atoi(ctx.PostForm("value"))
 	if err != nil {
 		response, _ := restapi.NewErrorResponse("No valid diff value").Marshal()
@@ -100,7 +85,7 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 		return
 	}
 
-	acc, err := controller.service.UpdateAccount(int64(ID), value)
+	acc, err := controller.service.UpdateAccount(ID, value)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))

@@ -64,11 +64,7 @@ func addAccount() {
 	acc := &accounts.Account{}
 
 	var err error
-	acc.ID, err = strconv.ParseInt(os.Args[2], 10, 64)
-	if err != nil {
-		print("Cant parse accountID")
-		return
-	}
+	acc.ID = os.Args[2]
 	acc.Owner = accounts.AccountOwner{Name: os.Args[3]}
 	acc.Group = accounts.AccountGroup{GroupID: os.Args[4]}
 	acc.Value, err = strconv.Atoi(os.Args[5])

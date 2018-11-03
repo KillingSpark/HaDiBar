@@ -59,6 +59,8 @@ func (db *jsonUserDatabase) Load() error {
 }
 
 func (db *jsonUserDatabase) Save() error {
+	os.Remove(db.path)
+	os.Create(db.path)
 	jsonFile, err := os.OpenFile(db.path, os.O_RDWR, 0)
 	// if we os.Open returns an error then handle it
 	if err != nil {

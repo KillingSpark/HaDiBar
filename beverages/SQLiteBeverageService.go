@@ -56,42 +56,42 @@ func (service *SQLiteBeverageService) GetBeverages() []Beverage {
 }
 
 //GetBeverage returns the identified beverage
-func (service *SQLiteBeverageService) GetBeverage(aID string) (Beverage, bool) {
-	var bev Beverage
+func (service *SQLiteBeverageService) GetBeverage(aID string) (*Beverage, error) {
+	var bev *Beverage
 	err := service.QueryRow("SELECT * FROM beverages WHERE ID LIKE ?", aID).Scan(&bev.ID, &bev.Name, &bev.Value)
 	if err != nil {
-		return bev, false
+		return nil, err
 	}
 
-	return bev, true
+	return bev, nil
 }
 
 //NewBeverage creates a new beverage and stores it in the database
-func (service *SQLiteBeverageService) NewBeverage(aName string, aValue int) (Beverage, bool) {
-	bev := Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue}
+func (service *SQLiteBeverageService) NewBeverage(aName string, aValue int) (*Beverage, error) {
+	bev := &Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue}
 	_, err := service.Exec("INSERT INTO beverages VALUES (?,?,?)", bev.ID, bev.Name, bev.Value)
 	if err != nil {
-		return bev, false
+		return nil, err
 	}
 
-	return bev, true
+	return bev, nil
 }
 
 //UpdateBeverage updates the data for the identified beverage (eg name and value)
-func (service *SQLiteBeverageService) UpdateBeverage(aID string, aName string, aValue int) (Beverage, bool) {
+func (service *SQLiteBeverageService) UpdateBeverage(aID string, aName string, aValue int) (*Beverage, error) {
 	_, err := service.Exec("UPDATE beverages SET Name = ?, Value = ? WHERE ID = ?", aName, aValue, aID)
-	bev := Beverage{ID: aID, Name: aName, Value: aValue}
 	if err != nil {
-		return bev, false
+		return nil, err
 	}
-	return bev, true
+	bev := &Beverage{ID: aID, Name: aName, Value: aValue}
+	return bev, nil
 }
 
 //DeleteBeverage deletes the identified beverage
-func (service *SQLiteBeverageService) DeleteBeverage(aID string) bool {
+func (service *SQLiteBeverageService) DeleteBeverage(aID string) error {
 	_, err := service.Exec("DELETE FROM beverages WHERE ID = ?", aID)
 	if err != nil {
-		return false
+		return err
 	}
-	return true
+	return nil
 }
