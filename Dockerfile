@@ -4,8 +4,9 @@ FROM iron/go
 WORKDIR /app
 
 # Now just add the binary
-ADD HaDiBar /app/
-ADD settings.json /app/
+COPY HaDiBar HaDiBar
+COPY settings.json settings.json
+COPY webapp webapp
 
 EXPOSE 8080/tcp
 
