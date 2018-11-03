@@ -49,14 +49,20 @@ func (service *AccountService) Add(new *Account) error {
 }
 
 func (service *AccountService) Load() error {
+	if _, err := os.Stat(service.path); os.IsNotExist(err) {
+		service.accounts = make(map[string]*Account)
+		return nil
+	}
 	jsonFile, err := os.Open(service.path)
 	// if we os.Open returns an error then handle it
 	if err != nil {
+		service.accounts = make(map[string]*Account)
 		return err
 	}
 	defer jsonFile.Close()
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
+		service.accounts = make(map[string]*Account)
 		return err
 	}
 

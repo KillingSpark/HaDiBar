@@ -39,19 +39,30 @@ func (db *jsonUserDatabase) Add(new *LoginInfo) error {
 }
 
 func (db *jsonUserDatabase) Load() error {
+	if _, err := os.Stat(db.path); os.IsNotExist(err) {
+		db.users = make(map[string]*LoginInfo)
+	}
 	jsonFile, err := os.Open(db.path)
 	// if we os.Open returns an error then handle it
 	if err != nil {
+		db.users = make(map[string]*LoginInfo)
 		return err
 	}
 	defer jsonFile.Close()
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
+		db.users = make(map[string]*LoginInfo)
 		return err
 	}
 
-	err = json.Unmarshal([]byte(byteValue), &db.users)
+	if len(byteValue) == 0 {
+		db.users = make(map[string]*LoginInfo)
+		return nil
+	}
+
+	err = json.Unmarshal(byteValue, &db.users)
 	if err != nil {
+		db.users = make(map[string]*LoginInfo)
 		return err
 	}
 
