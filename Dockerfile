@@ -1,5 +1,5 @@
 # iron/go is the alpine image with only ca-certificates added
-FROM iron/go
+FROM scratch
 
 WORKDIR /app
 
