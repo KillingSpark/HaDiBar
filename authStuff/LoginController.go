@@ -36,11 +36,13 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 		response, _ := restapi.NewErrorResponse("credentials rejected").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		logger.Logger.Debug(sessionID + " failed to log in as: " + name)
-	} else {
-		response, _ := restapi.NewOkResponse("").Marshal()
-		fmt.Fprint(ctx.Writer, string(response))
-		logger.Logger.Debug(sessionID + " logged in as: " + name)
+		ctx.Abort()
+		return
 	}
+	response, _ := restapi.NewOkResponse("").Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
+	logger.Logger.Debug(sessionID + " logged in as: " + name)
+	ctx.Next()
 }
 
 //LogOut uncouples the usersession from a token
@@ -51,4 +53,5 @@ func (controller *LoginController) LogOut(ctx *gin.Context) {
 	fmt.Fprint(ctx.Writer, string(response))
 
 	logger.Logger.Debug(sessionID + " logged out")
+	ctx.Next()
 }

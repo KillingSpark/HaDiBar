@@ -54,14 +54,16 @@ func (auth *Auth) AddNewSession() string {
 	return session.id
 }
 
+var ErrAlreadyLoggedIn = errors.New("Already logged in")
+
 func (auth *Auth) LogIn(id, name, password string) error {
 	session, ok := auth.sessionMap[id]
 	if !ok {
-		return errors.New("Session not valid")
+		return ErrInvalidSession
 	}
 
 	if session.info != nil && session.info.LoggedIn {
-		return errors.New("Already logged in")
+		return ErrAlreadyLoggedIn
 	}
 
 	newinfo, err := auth.tester.isValid(name, password)
@@ -84,10 +86,12 @@ func (auth *Auth) GetSessionInfo(id string) (*LoginInfo, error) {
 	return session.info, nil
 }
 
+var ErrInvalidSession = errors.New("Session not valid")
+
 func (auth *Auth) LogOut(id string) error {
 	session, ok := auth.sessionMap[id]
 	if !ok {
-		return errors.New("Session not valid")
+		return ErrInvalidSession
 	}
 
 	session.info = &LoginInfo{LoggedIn: false}
@@ -116,6 +120,7 @@ func (auth *Auth) CheckSession(ctx *gin.Context) {
 		response, _ := restapi.NewErrorResponse("No valid session").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
+		return
 	}
 }
 
@@ -127,6 +132,7 @@ func (auth *Auth) CheckLoginStatus(ctx *gin.Context) {
 		response, _ := restapi.NewNosesResponse("Sessionid invalid").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
+		return
 	}
 	if session.info != nil && session.info.LoggedIn {
 		logger.Logger.Debug("Logincheck good for: " + sessionID)
@@ -137,6 +143,7 @@ func (auth *Auth) CheckLoginStatus(ctx *gin.Context) {
 		response, _ := restapi.NewErrorResponse("You must be logged in here").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
+		return
 	}
 }
 
@@ -145,5 +152,5 @@ func (auth *Auth) getSession(id string) (*Session, error) {
 	if ok {
 		return session, nil
 	}
-	return nil, errors.New("Session not valid")
+	return nil, ErrInvalidSession
 }

@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/killingspark/HaDiBar/authStuff"
 	"github.com/killingspark/HaDiBar/settings"
 )
 
@@ -37,10 +36,12 @@ func dummyAccs() []*Account {
 	return accs
 }
 
+var ErrIDAlreadyTaken = errors.New("AccountID already taken")
+
 func (service *AccountService) Add(new *Account) error {
 	for _, acc := range service.accounts {
 		if acc.ID == new.ID {
-			return errors.New("AccountID already taken")
+			return ErrIDAlreadyTaken
 		}
 	}
 	service.accounts = append(service.accounts, new)
@@ -59,8 +60,14 @@ func (service *AccountService) Load() error {
 		return err
 	}
 
+	if len(byteValue) == 0 { //empty file
+		service.accounts = make([]*Account, 0)
+		return nil
+	}
+
 	err = json.Unmarshal([]byte(byteValue), &service.accounts)
 	if err != nil {
+		service.accounts = make([]*Account, 0)
 		return err
 	}
 	return nil
@@ -112,10 +119,7 @@ func (service *AccountService) GetAccount(aID int64) (*Account, error) {
 }
 
 //UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) UpdateAccount(logininfo *authStuff.LoginInfo, aID int64, aValue int) (*Account, error) {
-	if !logininfo.LoggedIn {
-		return nil, errors.New("not logged in")
-	}
+func (service *AccountService) UpdateAccount(aID int64, aValue int) (*Account, error) {
 	service.accounts[aID].Value += aValue
 	err := service.Save()
 	if err != nil {

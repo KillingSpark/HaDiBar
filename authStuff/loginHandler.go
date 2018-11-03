@@ -28,9 +28,11 @@ func NewJsonUserDatabase() *jsonUserDatabase {
 	return db
 }
 
+var ErrUsernameTaken = errors.New("already exists")
+
 func (db *jsonUserDatabase) Add(new *LoginInfo) error {
 	if _, ok := db.users[new.Name]; ok {
-		return errors.New("already exists")
+		return ErrUsernameTaken
 	}
 	db.users[new.Name] = new
 	return nil

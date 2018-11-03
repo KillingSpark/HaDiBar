@@ -13,14 +13,12 @@ import (
 //AccountController is the controller for accounts
 type AccountController struct {
 	service *AccountService
-	auth    *authStuff.Auth
 }
 
 //NewAccountController creates a new AccountController and initializes the service
 func NewAccountController(auth *authStuff.Auth) *AccountController {
 	var acC AccountController
 	acC.service = NewAccountService()
-	acC.auth = auth
 	return &acC
 }
 
@@ -31,13 +29,18 @@ func (controller *AccountController) GetAccounts(ctx *gin.Context) {
 		if ok {
 			response, _ := restapi.NewOkResponse(controller.service.GetAccounts(info.GroupID)).Marshal()
 			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Next()
 		} else {
 			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
 			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
 		}
 	} else {
 		response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
 	}
 }
 
@@ -47,12 +50,14 @@ func (controller *AccountController) GetAccount(ctx *gin.Context) {
 	if !ok {
 		response, _ := restapi.NewErrorResponse("no id in path").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
 		return
 	}
 	ID, err := strconv.Atoi(strID)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse("ID is invalid").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
 		return
 	}
 
@@ -60,16 +65,25 @@ func (controller *AccountController) GetAccount(ctx *gin.Context) {
 	if err != nil {
 		response, _ := restapi.NewErrorResponse("Error getting account: " + err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
 		return
 	}
 
 	response, _ := restapi.NewOkResponse(acc).Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
+	ctx.Next()
 }
 
 //UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
 func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
-	strID, _ := ctx.GetQuery("id")
+	strID, ok := ctx.GetQuery("id")
+	if !ok {
+		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
+
 	ID, err := strconv.Atoi(strID)
 
 	if err != nil {
@@ -85,16 +99,8 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	sessionID := ctx.Request.Header.Get("sessionID")
-	info, err := controller.auth.GetSessionInfo(sessionID)
-	if err != nil {
-		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
-		fmt.Fprint(ctx.Writer, string(response))
-		ctx.Abort()
-		return
-	}
 
-	acc, err := controller.service.UpdateAccount(info, int64(ID), value)
+	acc, err := controller.service.UpdateAccount(int64(ID), value)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
