@@ -31,6 +31,7 @@ func makeAccountRoutes(router *gin.RouterGroup, ac *accounts.AccountController) 
 	accGroup.GET("/all", ac.GetAccounts)
 	accGroup.GET("/get", ac.GetAccount)
 	accGroup.POST("/update", ac.UpdateAccount)
+	accGroup.POST("/new", ac.NewAccount)
 }
 
 func makeLoginRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {

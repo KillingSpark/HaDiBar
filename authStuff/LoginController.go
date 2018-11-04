@@ -33,7 +33,7 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 	err := controller.auth.LogIn(sessionID, name, password)
 
 	if err != nil {
-		response, _ := restapi.NewErrorResponse("credentials rejected").Marshal()
+		response, _ := restapi.NewErrorResponse("credentials rejected: " + sessionID).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		logger.Logger.Debug(sessionID + " failed to log in as: " + name)
 		ctx.Abort()

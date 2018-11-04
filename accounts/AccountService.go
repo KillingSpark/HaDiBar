@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/nanobox-io/golang-scribble"
 )
@@ -56,6 +57,20 @@ func (service *AccountService) Add(new *Account) error {
 	}
 
 	return nil
+}
+
+func (service *AccountService) CreateAdd(name, groupID string) (*Account, error) {
+	acc := &Account{}
+	acc.ID = strconv.FormatInt(time.Now().UnixNano(), 10)
+	acc.Owner.Name = name
+	acc.Group.GroupID = groupID
+	acc.Value = 0
+
+	if err := service.accRepo.Write(collectionName, acc.ID, acc); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 //GetAccounts returns all accounts that are part of this group

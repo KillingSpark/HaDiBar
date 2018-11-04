@@ -108,3 +108,35 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
 }
+
+//UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
+func (controller *AccountController) NewAccount(ctx *gin.Context) {
+	name, ok := ctx.GetQuery("name")
+	if !ok {
+		errResp, _ := restapi.NewErrorResponse("No name given").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
+
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok := inter.(*authStuff.LoginInfo)
+		if ok {
+			acc, err := controller.service.CreateAdd(name, info.GroupID)
+			if err != nil {
+				response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+				fmt.Fprint(ctx.Writer, string(response))
+				ctx.Abort()
+				return
+			}
+			response, _ := restapi.NewOkResponse(acc).Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Next()
+		} else {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+}
