@@ -37,7 +37,7 @@ func (service *BeverageService) GetBeverages(groupID string) ([]*Beverage, error
 	}
 	var bevs []*Beverage
 	for _, item := range list {
-		var bev *Beverage
+		bev := &Beverage{}
 		err := json.Unmarshal([]byte(item), bev)
 		if err != nil {
 			continue
@@ -54,7 +54,7 @@ var ErrInvalidGroupID = errors.New("ID for beverage is not in your group")
 
 //GetBeverage returns the identified beverage
 func (service *BeverageService) GetBeverage(aID, groupID string) (*Beverage, error) {
-	var bev *Beverage
+	bev := &Beverage{}
 	err := service.bevRepo.Read(collectionName, aID, bev)
 	if err != nil {
 		return nil, ErrInvalidID
@@ -79,7 +79,7 @@ func (service *BeverageService) NewBeverage(groupId, aName string, aValue int) (
 
 //UpdateBeverage updates the data for the identified beverage (eg name and value)
 func (service *BeverageService) UpdateBeverage(aID string, aName string, aValue int) (*Beverage, error) {
-	var bev *Beverage
+	bev := &Beverage{}
 	err := service.bevRepo.Read(collectionName, aID, bev)
 	if err != nil {
 		return nil, ErrInvalidID
@@ -97,7 +97,7 @@ func (service *BeverageService) UpdateBeverage(aID string, aName string, aValue 
 
 //DeleteBeverage deletes the identified beverage
 func (service *BeverageService) DeleteBeverage(aID string) error {
-	var bev *Beverage
+	bev := &Beverage{}
 	err := service.bevRepo.Read(collectionName, aID, bev)
 	if err != nil {
 		return ErrInvalidID

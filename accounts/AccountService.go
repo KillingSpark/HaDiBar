@@ -67,7 +67,7 @@ func (service *AccountService) GetAccounts(groupID string) ([]*Account, error) {
 
 	var res []*Account
 	for _, item := range list {
-		var acc *Account
+		acc := &Account{}
 		err := json.Unmarshal([]byte(item), acc)
 		if err != nil {
 			continue //skip invalied entries. maybe implement cleanup...
@@ -81,7 +81,7 @@ func (service *AccountService) GetAccounts(groupID string) ([]*Account, error) {
 
 //GetAccount returns the account indentified by accounts/:id
 func (service *AccountService) GetAccount(aID string) (*Account, error) {
-	var acc *Account
+	acc := &Account{}
 	err := service.accRepo.Read(collectionName, aID, acc)
 	if err != nil {
 		return nil, err
