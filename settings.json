@@ -1,8 +1,6 @@
 {
     "port":8080,
-    "beveragepath":"data/beverages.json",
-    "userpath":"data/users.json",
-    "accountpath":"data/accounts.json",
+    "datadir":"data",
     "webapppath":"webapp",
     "webapproute":"/app",
     "logginglevel":"DEBUG"

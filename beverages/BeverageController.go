@@ -9,6 +9,7 @@ import (
 
 	"github.com/killingspark/HaDiBar/authStuff"
 	"github.com/killingspark/HaDiBar/restapi"
+	"github.com/killingspark/HaDiBar/settings"
 )
 
 //BeverageController : Controller for the Beverages
@@ -17,10 +18,14 @@ type BeverageController struct {
 }
 
 //NewBeverageController creates a new BeverageController and initializes its service
-func NewBeverageController() *BeverageController {
-	var bc BeverageController
-	bc.service = NewBeverageService()
-	return &bc
+func NewBeverageController() (*BeverageController, error) {
+	bc := &BeverageController{}
+	var err error
+	bc.service, err = NewBeverageService(settings.S.DataDir)
+	if err != nil {
+		return nil, err
+	}
+	return bc, nil
 }
 
 //GetBeverages responds with all existing Beverages

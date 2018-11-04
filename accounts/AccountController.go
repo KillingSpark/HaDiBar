@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/HaDiBar/authStuff"
 	"github.com/killingspark/HaDiBar/restapi"
+	"github.com/killingspark/HaDiBar/settings"
 )
 
 //AccountController is the controller for accounts
@@ -16,10 +17,14 @@ type AccountController struct {
 }
 
 //NewAccountController creates a new AccountController and initializes the service
-func NewAccountController(auth *authStuff.Auth) *AccountController {
-	var acC AccountController
-	acC.service = NewAccountService()
-	return &acC
+func NewAccountController() (*AccountController, error) {
+	acC := &AccountController{}
+	var err error
+	acC.service, err = NewAccountService(settings.S.DataDir)
+	if err != nil {
+		return nil, err
+	}
+	return acC, nil
 }
 
 //GetAccounts gets all existing accounts
@@ -27,7 +32,14 @@ func (controller *AccountController) GetAccounts(ctx *gin.Context) {
 	if inter, ok := ctx.Get("logininfo"); ok {
 		info, ok := inter.(*authStuff.LoginInfo)
 		if ok {
-			response, _ := restapi.NewOkResponse(controller.service.GetAccounts(info.GroupID)).Marshal()
+			accs, err := controller.service.GetAccounts(info.GroupID)
+			if err != nil {
+				response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+				fmt.Fprint(ctx.Writer, string(response))
+				ctx.Abort()
+				return
+			}
+			response, _ := restapi.NewOkResponse(accs).Marshal()
 			fmt.Fprint(ctx.Writer, string(response))
 			ctx.Next()
 		} else {

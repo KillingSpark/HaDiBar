@@ -3,24 +3,28 @@ package accounts
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"os"
 	"strconv"
 
-	"github.com/killingspark/HaDiBar/settings"
+	"github.com/nanobox-io/golang-scribble"
 )
 
 //AccountService is a service for accessing accounts
 type AccountService struct {
 	accounts map[string]*Account
-	path     string
+	accRepo  *scribble.Driver
 }
 
+var collectionName = "accounts"
+
 //NewAccountService creates a AccountService and initialzes the Data
-func NewAccountService() *AccountService {
-	var acs AccountService
-	acs.path = os.ExpandEnv(settings.S.AccountPath)
-	return &acs
+func NewAccountService(path string) (*AccountService, error) {
+	acs := &AccountService{}
+	var err error
+	acs.accRepo, err = scribble.New(path, nil)
+	if err != nil {
+		return nil, err
+	}
+	return acs, nil
 }
 
 func dummyAccs() []*Account {
@@ -39,63 +43,15 @@ func dummyAccs() []*Account {
 var ErrIDAlreadyTaken = errors.New("AccountID already taken")
 
 func (service *AccountService) Add(new *Account) error {
-	for _, acc := range service.accounts {
-		if acc.ID == new.ID {
-			return ErrIDAlreadyTaken
-		}
-	}
-	service.accounts[new.ID] = new
-	return nil
-}
-
-func (service *AccountService) Load() error {
-	if _, err := os.Stat(service.path); os.IsNotExist(err) {
-		service.accounts = make(map[string]*Account)
-		return nil
-	}
-	jsonFile, err := os.Open(service.path)
-	// if we os.Open returns an error then handle it
-	if err != nil {
-		service.accounts = make(map[string]*Account)
-		return err
-	}
-	defer jsonFile.Close()
-	byteValue, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		service.accounts = make(map[string]*Account)
-		return err
-	}
-
-	if len(byteValue) == 0 { //empty file
-		service.accounts = make(map[string]*Account)
-		return nil
-	}
-
-	err = json.Unmarshal([]byte(byteValue), &service.accounts)
-	if err != nil {
-		service.accounts = make(map[string]*Account)
-		return err
-	}
-	return nil
-}
-
-func (service *AccountService) Save() error {
-	os.Remove(service.path)
-	os.Create(service.path)
-	jsonFile, err := os.OpenFile(service.path, os.O_RDWR, 0)
-	// if we os.Open returns an error then handle it
+	acc, err := service.GetAccount(new.ID)
 	if err != nil {
 		return err
 	}
-	defer jsonFile.Close()
-
-	enc, err := json.Marshal(service.accounts)
-	if err != nil {
-		return err
+	if acc != nil {
+		return ErrIDAlreadyTaken
 	}
 
-	_, err = jsonFile.Write(enc)
-	if err != nil {
+	if err := service.accRepo.Write(collectionName, new.ID, new); err != nil {
 		return err
 	}
 
@@ -103,35 +59,46 @@ func (service *AccountService) Save() error {
 }
 
 //GetAccounts returns all accounts that are part of this group
-func (service *AccountService) GetAccounts(groupID string) []*Account {
-	err := service.Load()
+func (service *AccountService) GetAccounts(groupID string) ([]*Account, error) {
+	list, err := service.accRepo.ReadAll(collectionName)
 	if err != nil {
-		return nil
+		return nil, err
 	}
+
 	var res []*Account
-	for _, acc := range service.accounts {
+	for _, item := range list {
+		var acc *Account
+		err := json.Unmarshal([]byte(item), acc)
+		if err != nil {
+			continue //skip invalied entries. maybe implement cleanup...
+		}
 		if acc.Group.GroupID == groupID {
 			res = append(res, acc)
 		}
 	}
-	return res
+	return res, nil
 }
 
 //GetAccount returns the account indentified by accounts/:id
 func (service *AccountService) GetAccount(aID string) (*Account, error) {
-	err := service.Load()
+	var acc *Account
+	err := service.accRepo.Read(collectionName, aID, acc)
 	if err != nil {
 		return nil, err
 	}
-	return service.accounts[aID], nil
+	return acc, nil
 }
 
 //UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) UpdateAccount(aID string, aValue int) (*Account, error) {
-	service.accounts[aID].Value += aValue
-	err := service.Save()
+func (service *AccountService) UpdateAccount(aID string, aDiff int) (*Account, error) {
+	acc, err := service.GetAccount(aID)
 	if err != nil {
 		return nil, err
 	}
-	return service.accounts[aID], nil
+	acc.Value += aDiff
+	err = service.accRepo.Write(collectionName, aID, acc)
+	if err != nil {
+		return nil, err
+	}
+	return acc, nil
 }

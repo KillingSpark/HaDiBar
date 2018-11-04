@@ -14,8 +14,6 @@ import (
 	"github.com/killingspark/HaDiBar/beverages"
 	"github.com/killingspark/HaDiBar/logger"
 	"github.com/killingspark/HaDiBar/settings"
-
-	"golang.org/x/crypto/sha3"
 )
 
 //making routes seperate for better readability
@@ -47,9 +45,6 @@ func main() {
 	if len(os.Args) == 1 {
 		startServer()
 	} else {
-		if os.Args[1] == "adduser" {
-			addUser()
-		}
 		if os.Args[1] == "addaccount" {
 			addAccount()
 		}
@@ -73,34 +68,15 @@ func addAccount() {
 		return
 	}
 
-	acs := accounts.NewAccountService()
-	acs.Load()
-	err = acs.Add(acc)
+	acs, err := accounts.NewAccountService(settings.S.DataDir)
 	if err != nil {
 		println(err.Error())
 		return
 	}
-	acs.Save()
-}
-
-func addUser() {
-	if len(os.Args) != 6 {
-		println("Wrong args. Use: name group salt passwd")
-		return
-	}
-	info := &authStuff.LoginInfo{}
-	info.Name = os.Args[2]
-	info.GroupID = os.Args[3]
-	info.Salt = os.Args[4]
-	info.Pwhash = authStuff.SaltPw(sha3.New256(), os.Args[5], info.Salt)
-
-	lh := authStuff.NewJsonUserDatabase()
-	lh.Load()
-	err := lh.Add(info)
+	err = acs.Add(acc)
 	if err != nil {
-		print(err.Error())
-	} else {
-		lh.Save()
+		println(err.Error())
+		return
 	}
 }
 
@@ -116,10 +92,19 @@ func startServer() {
 		ctx.Redirect(300, settings.S.WebappRoute)
 	})
 
-	auth := authStuff.NewAuth()
+	auth, err := authStuff.NewAuth()
+	if err != nil {
+		panic(err)
+	}
 
-	bc := beverages.NewBeverageController()
-	ac := accounts.NewAccountController(auth)
+	bc, err := beverages.NewBeverageController()
+	if err != nil {
+		panic(err)
+	}
+	ac, err := accounts.NewAccountController()
+	if err != nil {
+		panic(err)
+	}
 	lc := authStuff.NewLoginController(auth)
 
 	//router.Use(sessMan.CheckSession)

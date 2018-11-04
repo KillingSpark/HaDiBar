@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/HaDiBar/logger"
 	"github.com/killingspark/HaDiBar/restapi"
+	"github.com/killingspark/HaDiBar/settings"
 )
 
 //Entity (s) represent owners of an Account
@@ -35,11 +36,15 @@ type Auth struct {
 	tester     Authentikator
 }
 
-func NewAuth() *Auth {
+func NewAuth() (*Auth, error) {
 	auth := &Auth{}
 	auth.sessionMap = make(map[string](*Session))
-	auth.tester = NewJsonUserDatabase()
-	return auth
+	var err error
+	auth.tester, err = NewLoginService(settings.S.DataDir)
+	if err != nil {
+		return nil, err
+	}
+	return auth, nil
 }
 
 func (auth *Auth) AddNewSession() string {
