@@ -110,6 +110,41 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 }
 
 //UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
+func (controller *AccountController) AddAccountToGroup(ctx *gin.Context) {
+	ID, ok := ctx.GetQuery("id")
+	if !ok {
+		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
+
+	newgroupid := ctx.PostForm("newgroupid")
+
+	var info *authStuff.LoginInfo
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok = inter.(*authStuff.LoginInfo)
+		if !ok {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	acc, err := controller.service.AddAccountToGroup(ID, info.GroupID, newgroupid)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+	response, _ := restapi.NewOkResponse(acc).Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
+	ctx.Next()
+}
+
+//UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
 func (controller *AccountController) NewAccount(ctx *gin.Context) {
 	name, ok := ctx.GetQuery("name")
 	if !ok {

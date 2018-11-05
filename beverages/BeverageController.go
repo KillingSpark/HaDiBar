@@ -149,6 +149,41 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 	ctx.Next()
 }
 
+//UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
+func (controller *BeverageController) AddBeverageToGroup(ctx *gin.Context) {
+	ID, ok := ctx.GetQuery("id")
+	if !ok {
+		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
+
+	newgroupid := ctx.PostForm("newgroupid")
+
+	var info *authStuff.LoginInfo
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok = inter.(*authStuff.LoginInfo)
+		if !ok {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	bev, err := controller.service.AddBeverageToGroup(ID, info.GroupID, newgroupid)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+	response, _ := restapi.NewOkResponse(bev).Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
+	ctx.Next()
+}
+
 //DeleteBeverage deletes the beverage identified by /beverage/:id and responds with a YEP/NOPE
 func (controller *BeverageController) DeleteBeverage(ctx *gin.Context) {
 	ID, ok := ctx.GetQuery("id")
