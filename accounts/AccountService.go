@@ -31,11 +31,11 @@ func NewAccountService(path string) (*AccountService, error) {
 func dummyAccs() []*Account {
 	accs := make([]*Account, 0)
 	for i := 0; i < 10; i++ {
-		acc := &Account{ID: strconv.Itoa(i), Value: 4242, Group: AccountGroup{GroupID: "M6"}, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
+		acc := &Account{ID: strconv.Itoa(i), Value: 4242, Groups: []*AccountGroup{&AccountGroup{GroupID: "M6"}}, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
 		accs = append(accs, acc)
 	}
 	for i := 0; i < 10; i++ {
-		acc := &Account{ID: strconv.Itoa(i), Value: 4242, Group: AccountGroup{GroupID: "M5"}, Owner: AccountOwner{Name: "Paul" + strconv.Itoa(i)}}
+		acc := &Account{ID: strconv.Itoa(i), Value: 4242, Groups: []*AccountGroup{&AccountGroup{GroupID: "M5"}}, Owner: AccountOwner{Name: "Paul" + strconv.Itoa(i)}}
 		accs = append(accs, acc)
 	}
 	return accs
@@ -63,7 +63,7 @@ func (service *AccountService) CreateAdd(name, groupID string) (*Account, error)
 	acc := &Account{}
 	acc.ID = strconv.FormatInt(time.Now().UnixNano(), 10)
 	acc.Owner.Name = name
-	acc.Group.GroupID = groupID
+	acc.Groups = []*AccountGroup{&AccountGroup{GroupID: groupID}}
 	acc.Value = 0
 
 	if err := service.accRepo.Write(collectionName, acc.ID, acc); err != nil {
@@ -87,8 +87,11 @@ func (service *AccountService) GetAccounts(groupID string) ([]*Account, error) {
 		if err != nil {
 			continue //skip invalied entries. maybe implement cleanup...
 		}
-		if acc.Group.GroupID == groupID {
-			res = append(res, acc)
+		for _, group := range acc.Groups {
+			if group.GroupID == groupID {
+				res = append(res, acc)
+				break
+			}
 		}
 	}
 	return res, nil
@@ -111,6 +114,31 @@ func (service *AccountService) UpdateAccount(aID string, aDiff int) (*Account, e
 		return nil, err
 	}
 	acc.Value += aDiff
+	err = service.accRepo.Write(collectionName, aID, acc)
+	if err != nil {
+		return nil, err
+	}
+	return acc, nil
+}
+
+var ErrNotOwnerOfObject = errors.New("This User is not an owner of this account")
+
+func (service *AccountService) AddAccountToGroup(aID, groupID, aNewGroup string) (*Account, error) {
+	acc, err := service.GetAccount(aID)
+	if err != nil {
+		return nil, err
+	}
+	contains := false
+	for _, group := range acc.Groups {
+		if group.GroupID == groupID {
+			contains = true
+			break
+		}
+	}
+	if !contains {
+		return nil, ErrNotOwnerOfObject
+	}
+	acc.Groups = append(acc.Groups, &AccountGroup{GroupID: aNewGroup})
 	err = service.accRepo.Write(collectionName, aID, acc)
 	if err != nil {
 		return nil, err

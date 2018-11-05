@@ -42,8 +42,11 @@ func (service *BeverageService) GetBeverages(groupID string) ([]*Beverage, error
 		if err != nil {
 			continue
 		}
-		if bev.GroupID == groupID {
-			bevs = append(bevs, bev)
+		for _, id := range bev.GroupIDs {
+			if id == groupID {
+				bevs = append(bevs, bev)
+				break
+			}
 		}
 	}
 	return bevs, nil
@@ -59,7 +62,14 @@ func (service *BeverageService) GetBeverage(aID, groupID string) (*Beverage, err
 	if err != nil {
 		return nil, ErrInvalidID
 	}
-	if bev.GroupID != groupID {
+	contains := false
+	for _, id := range bev.GroupIDs {
+		if id == groupID {
+			contains = true
+			break
+		}
+	}
+	if !contains {
 		return nil, ErrInvalidGroupID
 	}
 
@@ -68,7 +78,7 @@ func (service *BeverageService) GetBeverage(aID, groupID string) (*Beverage, err
 
 //NewBeverage creates a new beverage and stores it in the database
 func (service *BeverageService) NewBeverage(groupId, aName string, aValue int) (*Beverage, error) {
-	bev := &Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), GroupID: groupId, Name: aName, Value: aValue}
+	bev := &Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), GroupIDs: []string{groupId}, Name: aName, Value: aValue}
 
 	if err := service.bevRepo.Write(collectionName, bev.ID, bev); err != nil {
 		return nil, err
@@ -109,4 +119,29 @@ func (service *BeverageService) DeleteBeverage(aID string) error {
 	}
 
 	return nil
+}
+
+var ErrNotOwnerOfObject = errors.New("This User is not an owner of this account")
+
+func (service *BeverageService) AddBeverageToGroup(aID, groupID, aNewGroup string) (*Beverage, error) {
+	bev, err := service.GetBeverage(aID, groupID)
+	if err != nil {
+		return nil, err
+	}
+	contains := false
+	for _, id := range bev.GroupIDs {
+		if id == groupID {
+			contains = true
+			break
+		}
+	}
+	if !contains {
+		return nil, ErrNotOwnerOfObject
+	}
+	bev.GroupIDs = append(bev.GroupIDs, groupID)
+	err = service.bevRepo.Write(collectionName, aID, bev)
+	if err != nil {
+		return nil, err
+	}
+	return bev, nil
 }
