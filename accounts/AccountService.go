@@ -70,7 +70,7 @@ func (service *AccountService) CreateAdd(name, groupID string) (*Account, error)
 		return nil, err
 	}
 
-	return nil, nil
+	return acc, nil
 }
 
 //GetAccounts returns all accounts that are part of this group
@@ -144,4 +144,17 @@ func (service *AccountService) AddAccountToGroup(aID, groupID, aNewGroup string)
 		return nil, err
 	}
 	return acc, nil
+}
+
+//UpdateAccount updates the account with the difference and returns the new account
+func (service *AccountService) DeleteAccount(aID string) error {
+	_, err := service.GetAccount(aID)
+	if err != nil {
+		return err
+	}
+	err = service.accRepo.Delete(collectionName, aID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

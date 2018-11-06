@@ -146,7 +146,7 @@ func (controller *AccountController) AddAccountToGroup(ctx *gin.Context) {
 
 //UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
 func (controller *AccountController) NewAccount(ctx *gin.Context) {
-	name, ok := ctx.GetQuery("name")
+	name, ok := ctx.GetPostForm("name")
 	if !ok {
 		errResp, _ := restapi.NewErrorResponse("No name given").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
@@ -173,5 +173,26 @@ func (controller *AccountController) NewAccount(ctx *gin.Context) {
 			ctx.Abort()
 			return
 		}
+	}
+}
+
+func (controller *AccountController) DeleteAccount(ctx *gin.Context) {
+	ID, ok := ctx.GetQuery("id")
+	if !ok {
+		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
+
+	if err := controller.service.DeleteAccount(ID); err == nil {
+		response, _ := restapi.NewOkResponse("").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Next()
+	} else {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
 	}
 }

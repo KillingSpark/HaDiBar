@@ -22,10 +22,9 @@ func makeBeverageRoutes(router *gin.RouterGroup, bc *beverages.BeverageControlle
 	bevGroup.GET("/all", bc.GetBeverages)
 	bevGroup.GET("/get", bc.GetBeverage)
 	bevGroup.POST("/update", bc.UpdateBeverage)
-	bevGroup.DELETE("/delete", bc.DeleteBeverage)
+	bevGroup.POST("/addToGroup", bc.AddBeverageToGroup)
 	bevGroup.PUT("/new", bc.NewBeverage)
-	bevGroup.PUT("/addToGroup", bc.AddBeverageToGroup)
-
+	bevGroup.DELETE("/delete", bc.DeleteBeverage)
 }
 
 func makeAccountRoutes(router *gin.RouterGroup, ac *accounts.AccountController) {
@@ -33,8 +32,9 @@ func makeAccountRoutes(router *gin.RouterGroup, ac *accounts.AccountController) 
 	accGroup.GET("/all", ac.GetAccounts)
 	accGroup.GET("/get", ac.GetAccount)
 	accGroup.POST("/update", ac.UpdateAccount)
-	accGroup.POST("/new", ac.NewAccount)
 	accGroup.POST("/addToGroup", ac.AddAccountToGroup)
+	accGroup.PUT("/new", ac.NewAccount)
+	accGroup.DELETE("/delete", ac.DeleteAccount)
 }
 
 func makeLoginRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {
