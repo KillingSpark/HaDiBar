@@ -11,8 +11,7 @@ import (
 
 //AccountService is a service for accessing accounts
 type AccountService struct {
-	accounts map[string]*Account
-	accRepo  *scribble.Driver
+	accRepo *scribble.Driver
 }
 
 var collectionName = "accounts"

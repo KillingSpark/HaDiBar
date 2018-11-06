@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"os"
 
 	"log"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/killingspark/HaDiBar/authStuff"
 	"github.com/killingspark/HaDiBar/beverages"
 	"github.com/killingspark/HaDiBar/logger"
+	"github.com/killingspark/HaDiBar/reports"
 	"github.com/killingspark/HaDiBar/settings"
 )
 
@@ -37,6 +37,12 @@ func makeAccountRoutes(router *gin.RouterGroup, ac *accounts.AccountController) 
 	accGroup.DELETE("/delete", ac.DeleteAccount)
 }
 
+func makeReportRoutes(router *gin.RouterGroup, rc *reports.ReportsController) {
+	repGroup := router.Group("/reports")
+	repGroup.GET("/accounts", rc.GenerateAccountList)
+	repGroup.GET("/beverages", rc.GenerateBeverageMatrix)
+}
+
 func makeLoginRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {
 	router.POST("/session/login", lc.Login)
 	router.POST("/session/logout", lc.LogOut)
@@ -46,42 +52,7 @@ func makeLoginRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {
 
 func main() {
 	settings.ReadSettings()
-	if len(os.Args) == 1 {
-		startServer()
-	} else {
-		if os.Args[1] == "addaccount" {
-			addAccount()
-		}
-	}
-}
-
-func addAccount() {
-	if len(os.Args) != 6 {
-		println("Wrong args. Use: accID name group value")
-		return
-	}
-	acc := &accounts.Account{}
-
-	var err error
-	acc.ID = os.Args[2]
-	acc.Owner = accounts.AccountOwner{Name: os.Args[3]}
-	acc.Groups = []*accounts.AccountGroup{&accounts.AccountGroup{GroupID: os.Args[4]}}
-	acc.Value, err = strconv.Atoi(os.Args[5])
-	if err != nil {
-		print("Cant parse value")
-		return
-	}
-
-	acs, err := accounts.NewAccountService(settings.S.DataDir)
-	if err != nil {
-		println(err.Error())
-		return
-	}
-	err = acs.Add(acc)
-	if err != nil {
-		println(err.Error())
-		return
-	}
+	startServer()
 }
 
 func startServer() {
@@ -98,18 +69,23 @@ func startServer() {
 
 	auth, err := authStuff.NewAuth()
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
 	bc, err := beverages.NewBeverageController()
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 	ac, err := accounts.NewAccountController()
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 	lc := authStuff.NewLoginController(auth)
+
+	rc, err := reports.NewReportsController()
+	if err != nil {
+		panic(err.Error())
+	}
 
 	//router.Use(sessMan.CheckSession)
 	apiGroup := router.Group("/api")
@@ -119,6 +95,7 @@ func startServer() {
 
 	makeBeverageRoutes(floorSpecificGroup, bc)
 	makeAccountRoutes(floorSpecificGroup, ac)
+	makeReportRoutes(floorSpecificGroup, rc)
 	makeLoginRoutes(apiGroup, lc)
 
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(settings.S.Port), router))

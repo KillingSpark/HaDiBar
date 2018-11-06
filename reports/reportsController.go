@@ -1,0 +1,110 @@
+package reports
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/killingspark/HaDiBar/accounts"
+	"github.com/killingspark/HaDiBar/authStuff"
+	"github.com/killingspark/HaDiBar/beverages"
+	"github.com/killingspark/HaDiBar/restapi"
+	"github.com/killingspark/HaDiBar/settings"
+)
+
+type ReportsController struct {
+	bevsrv *beverages.BeverageService
+	accsrv *accounts.AccountService
+}
+
+func NewReportsController() (*ReportsController, error) {
+	bevsrv, err := beverages.NewBeverageService(settings.S.DataDir)
+	if err != nil {
+		return nil, err
+	}
+	accsrv, err := accounts.NewAccountService(settings.S.DataDir)
+	if err != nil {
+		return nil, err
+	}
+	return &ReportsController{bevsrv: bevsrv, accsrv: accsrv}, nil
+}
+
+func makeAccountTableRow(acc *accounts.Account) string {
+	return "<tr><td>" + acc.Owner.Name + "</td><td>" + strconv.Itoa(acc.Value) + "</td></tr>"
+}
+
+func (rc *ReportsController) GenerateAccountList(ctx *gin.Context) {
+	var info *authStuff.LoginInfo
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok = inter.(*authStuff.LoginInfo)
+		if !ok {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	accs, err := rc.accsrv.GetAccounts(info.GroupID)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+	report := "<table id='accreport'><th>Name</th><th>Value</th>"
+	for _, acc := range accs {
+		report += makeAccountTableRow(acc)
+	}
+	report += "</table>"
+	response, _ := restapi.NewOkResponse(report).Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
+	ctx.Next()
+}
+
+func makeBeverageTableRow(acc *accounts.Account, bevs int) string {
+	row := "<tr><td>" + acc.Owner.Name + "</td>"
+	for i := 0; i < bevs; i++ {
+		row += "<td></td>"
+	}
+	return row + "</tr>"
+}
+
+func (rc *ReportsController) GenerateBeverageMatrix(ctx *gin.Context) {
+	var info *authStuff.LoginInfo
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok = inter.(*authStuff.LoginInfo)
+		if !ok {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	bevs, err := rc.bevsrv.GetBeverages(info.GroupID)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+	report := "<table id='matrix'><th></th>"
+	for _, bev := range bevs {
+		report += "<th>" + bev.Name + ": " + strconv.Itoa(bev.Value) + "ct </th>"
+	}
+	accs, err := rc.accsrv.GetAccounts(info.GroupID)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+	for _, acc := range accs {
+		report += makeBeverageTableRow(acc, len(bevs))
+	}
+	report += "</table>"
+	response, _ := restapi.NewOkResponse(report).Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
+	ctx.Next()
+}
