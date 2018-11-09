@@ -1,5 +1,7 @@
 package accounts
 
+import "time"
+
 //Account : represents the Accouts of Floors/Roomates/etc
 type Account struct {
 	Value int          `json:"Value"`
@@ -9,4 +11,10 @@ type Account struct {
 
 type AccountOwner struct {
 	Name string `json:"Name"`
+}
+
+type Transaction struct {
+	sourceID  string
+	targetID  string
+	timestamp time.Time
 }

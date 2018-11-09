@@ -18,6 +18,7 @@ type AccountService struct {
 }
 
 var collectionName = "accounts"
+var collectionNameTrans = "transactions"
 
 //NewAccountService creates a AccountService and initialzes the Data
 func NewAccountService(path string, perms *permissions.Permissions) (*AccountService, error) {
@@ -116,6 +117,52 @@ func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*
 		return nil, err
 	}
 	return acc, nil
+}
+
+//UpdateAccount updates the account with the difference and returns the new account
+func (service *AccountService) Transaction(sourceID, targetID, userID string, amount int) error {
+	ok, err := service.perms.CheckPermissionAny(sourceID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Update})
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrNotOwnerOfObject
+	}
+	ok, err = service.perms.CheckPermissionAny(targetID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Update})
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrNotOwnerOfObject
+	}
+
+	source, err := service.GetAccount(sourceID, userID)
+	if err != nil {
+		return err
+	}
+	target, err := service.GetAccount(targetID, userID)
+	if err != nil {
+		return err
+	}
+	source.Value -= amount
+	err = service.accRepo.Write(collectionName, source.ID, source)
+	if err != nil {
+		return err
+	}
+	target.Value += amount
+	err = service.accRepo.Write(collectionName, target.ID, target)
+	if err != nil {
+		return err
+	}
+	trans := &Transaction{}
+	trans.sourceID = source.ID
+	trans.targetID = target.ID
+	trans.timestamp = time.Now()
+	err = service.accRepo.Write(collectionNameTrans, strconv.Itoa(trans.timestamp.Nanosecond()), target)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 var ErrNotOwnerOfObject = errors.New("This User is not an owner of this account")

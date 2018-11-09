@@ -232,3 +232,50 @@ func (controller *AccountController) DeleteAccount(ctx *gin.Context) {
 		return
 	}
 }
+
+func (controller *AccountController) DoTransaction(ctx *gin.Context) {
+	sourceID, ok := ctx.GetPostForm("sourceid")
+	if !ok {
+		errResp, _ := restapi.NewErrorResponse("No sourceID given").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
+	targetID, ok := ctx.GetPostForm("targetid")
+	if !ok {
+		errResp, _ := restapi.NewErrorResponse("No targetID given").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
+
+	var info *authStuff.LoginInfo
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok = inter.(*authStuff.LoginInfo)
+		if !ok {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	amount, err := strconv.Atoi(ctx.PostForm("amount"))
+	if err != nil {
+		response, _ := restapi.NewErrorResponse("No valid diff value").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+
+	if err := controller.service.Transaction(sourceID, targetID, info.Name, amount); err == nil {
+		response, _ := restapi.NewOkResponse("").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Next()
+	} else {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+}

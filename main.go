@@ -34,6 +34,7 @@ func makeAccountRoutes(router *gin.RouterGroup, ac *accounts.AccountController) 
 	accGroup.GET("/get", ac.GetAccount)
 	accGroup.POST("/update", ac.UpdateAccount)
 	accGroup.POST("/addToGroup", ac.GivePermissionToUser)
+	accGroup.POST("/transaction", ac.DoTransaction)
 	accGroup.PUT("/new", ac.NewAccount)
 	accGroup.DELETE("/delete", ac.DeleteAccount)
 }
