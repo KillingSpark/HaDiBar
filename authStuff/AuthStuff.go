@@ -16,7 +16,6 @@ import (
 //Entity (s) represent owners of an Account
 type LoginInfo struct {
 	Name     string
-	GroupID  string
 	LoggedIn bool
 	Salt     string
 	Pwhash   string

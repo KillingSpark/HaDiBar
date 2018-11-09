@@ -12,6 +12,7 @@ import (
 	"github.com/killingspark/HaDiBar/authStuff"
 	"github.com/killingspark/HaDiBar/beverages"
 	"github.com/killingspark/HaDiBar/logger"
+	"github.com/killingspark/HaDiBar/permissions"
 	"github.com/killingspark/HaDiBar/reports"
 	"github.com/killingspark/HaDiBar/settings"
 )
@@ -22,7 +23,7 @@ func makeBeverageRoutes(router *gin.RouterGroup, bc *beverages.BeverageControlle
 	bevGroup.GET("/all", bc.GetBeverages)
 	bevGroup.GET("/get", bc.GetBeverage)
 	bevGroup.POST("/update", bc.UpdateBeverage)
-	bevGroup.POST("/addToGroup", bc.AddBeverageToGroup)
+	bevGroup.POST("/addToGroup", bc.GivePermissionToUser)
 	bevGroup.PUT("/new", bc.NewBeverage)
 	bevGroup.DELETE("/delete", bc.DeleteBeverage)
 }
@@ -32,7 +33,7 @@ func makeAccountRoutes(router *gin.RouterGroup, ac *accounts.AccountController) 
 	accGroup.GET("/all", ac.GetAccounts)
 	accGroup.GET("/get", ac.GetAccount)
 	accGroup.POST("/update", ac.UpdateAccount)
-	accGroup.POST("/addToGroup", ac.AddAccountToGroup)
+	accGroup.POST("/addToGroup", ac.GivePermissionToUser)
 	accGroup.PUT("/new", ac.NewAccount)
 	accGroup.DELETE("/delete", ac.DeleteAccount)
 }
@@ -72,17 +73,22 @@ func startServer() {
 		panic(err.Error())
 	}
 
-	bc, err := beverages.NewBeverageController()
+	perms, err := permissions.NewPermissions(settings.S.DataDir)
 	if err != nil {
 		panic(err.Error())
 	}
-	ac, err := accounts.NewAccountController()
+
+	bc, err := beverages.NewBeverageController(perms)
+	if err != nil {
+		panic(err.Error())
+	}
+	ac, err := accounts.NewAccountController(perms)
 	if err != nil {
 		panic(err.Error())
 	}
 	lc := authStuff.NewLoginController(auth)
 
-	rc, err := reports.NewReportsController()
+	rc, err := reports.NewReportsController(perms)
 	if err != nil {
 		panic(err.Error())
 	}

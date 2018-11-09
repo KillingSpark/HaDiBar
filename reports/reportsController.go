@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/killingspark/HaDiBar/permissions"
+
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/HaDiBar/accounts"
 	"github.com/killingspark/HaDiBar/authStuff"
@@ -17,12 +19,12 @@ type ReportsController struct {
 	accsrv *accounts.AccountService
 }
 
-func NewReportsController() (*ReportsController, error) {
-	bevsrv, err := beverages.NewBeverageService(settings.S.DataDir)
+func NewReportsController(perms *permissions.Permissions) (*ReportsController, error) {
+	bevsrv, err := beverages.NewBeverageService(settings.S.DataDir, perms)
 	if err != nil {
 		return nil, err
 	}
-	accsrv, err := accounts.NewAccountService(settings.S.DataDir)
+	accsrv, err := accounts.NewAccountService(settings.S.DataDir, perms)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +47,7 @@ func (rc *ReportsController) GenerateAccountList(ctx *gin.Context) {
 		}
 	}
 
-	accs, err := rc.accsrv.GetAccounts(info.GroupID)
+	accs, err := rc.accsrv.GetAccounts(info.Name)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
@@ -82,7 +84,7 @@ func (rc *ReportsController) GenerateBeverageMatrix(ctx *gin.Context) {
 		}
 	}
 
-	bevs, err := rc.bevsrv.GetBeverages(info.GroupID)
+	bevs, err := rc.bevsrv.GetBeverages(info.Name)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
@@ -93,7 +95,7 @@ func (rc *ReportsController) GenerateBeverageMatrix(ctx *gin.Context) {
 	for _, bev := range bevs {
 		report += "<th>" + bev.Name + ": " + strconv.Itoa(bev.Value) + "ct </th>"
 	}
-	accs, err := rc.accsrv.GetAccounts(info.GroupID)
+	accs, err := rc.accsrv.GetAccounts(info.Name)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/killingspark/HaDiBar/authStuff"
+	"github.com/killingspark/HaDiBar/permissions"
 	"github.com/killingspark/HaDiBar/restapi"
 	"github.com/killingspark/HaDiBar/settings"
 )
@@ -18,10 +19,10 @@ type BeverageController struct {
 }
 
 //NewBeverageController creates a new BeverageController and initializes its service
-func NewBeverageController() (*BeverageController, error) {
+func NewBeverageController(perms *permissions.Permissions) (*BeverageController, error) {
 	bc := &BeverageController{}
 	var err error
-	bc.service, err = NewBeverageService(settings.S.DataDir)
+	bc.service, err = NewBeverageService(settings.S.DataDir, perms)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +33,7 @@ func NewBeverageController() (*BeverageController, error) {
 func (controller *BeverageController) GetBeverages(ctx *gin.Context) {
 	inter, _ := ctx.Get("logininfo")
 	info := inter.(*authStuff.LoginInfo)
-	bevs, err := controller.service.GetBeverages(info.GroupID)
+	bevs, err := controller.service.GetBeverages(info.Name)
 	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Couldnt get the beverage array").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
@@ -63,7 +64,7 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 		return
 	}
 
-	bev, err := controller.service.GetBeverage(ID, info.GroupID)
+	bev, err := controller.service.GetBeverage(ID, info.Name)
 	if err == nil {
 		response, err := restapi.NewOkResponse(bev).Marshal()
 		if err != nil {
@@ -94,7 +95,7 @@ func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 		return
 	}
 
-	nb, err := controller.service.NewBeverage(info.GroupID, ctx.PostForm("name"), nv)
+	nb, err := controller.service.NewBeverage(info.Name, ctx.PostForm("name"), nv)
 	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Couldnt save new beverage").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
@@ -130,7 +131,19 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 		return
 	}
 	nn := ctx.PostForm("name")
-	nb, err := controller.service.UpdateBeverage(ID, nn, nv)
+
+	var info *authStuff.LoginInfo
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok = inter.(*authStuff.LoginInfo)
+		if !ok {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	nb, err := controller.service.UpdateBeverage(ID, info.Name, nn, nv)
 	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Couldnt update beverage").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
@@ -150,7 +163,7 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 }
 
 //UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
-func (controller *BeverageController) AddBeverageToGroup(ctx *gin.Context) {
+func (controller *BeverageController) GivePermissionToUser(ctx *gin.Context) {
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
 		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
@@ -159,7 +172,7 @@ func (controller *BeverageController) AddBeverageToGroup(ctx *gin.Context) {
 		return
 	}
 
-	newgroupid := ctx.PostForm("newgroupid")
+	newowner := ctx.PostForm("newowner")
 
 	var info *authStuff.LoginInfo
 	if inter, ok := ctx.Get("logininfo"); ok {
@@ -172,14 +185,14 @@ func (controller *BeverageController) AddBeverageToGroup(ctx *gin.Context) {
 		}
 	}
 
-	bev, err := controller.service.AddBeverageToGroup(ID, info.GroupID, newgroupid)
+	err := controller.service.GivePermissionToUser(ID, info.Name, newowner, permissions.CRUD)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return
 	}
-	response, _ := restapi.NewOkResponse(bev).Marshal()
+	response, _ := restapi.NewOkResponse("").Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
 }
@@ -194,7 +207,18 @@ func (controller *BeverageController) DeleteBeverage(ctx *gin.Context) {
 		return
 	}
 
-	if err := controller.service.DeleteBeverage(ID); err == nil {
+	var info *authStuff.LoginInfo
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok = inter.(*authStuff.LoginInfo)
+		if !ok {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	if err := controller.service.DeleteBeverage(ID, info.Name); err == nil {
 		response, _ := restapi.NewOkResponse("").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Next()

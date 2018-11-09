@@ -54,7 +54,6 @@ func (ls *LoginService) Add(new *LoginInfo) error {
 func createNewUser(hasher hash.Hash, username, passwd string) *LoginInfo {
 	user := &LoginInfo{}
 	user.Name = username
-	user.GroupID = strconv.FormatInt(time.Now().UnixNano(), 10)
 	user.Salt = saltPw(hasher, strconv.FormatInt(time.Now().UnixNano()%rand.Int63(), 10), username)
 	user.Pwhash = saltPw(hasher, passwd, user.Salt)
 	return user

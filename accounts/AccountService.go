@@ -6,50 +6,35 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/killingspark/HaDiBar/permissions"
+
 	"github.com/nanobox-io/golang-scribble"
 )
 
 //AccountService is a service for accessing accounts
 type AccountService struct {
 	accRepo *scribble.Driver
+	perms   *permissions.Permissions
 }
 
 var collectionName = "accounts"
 
 //NewAccountService creates a AccountService and initialzes the Data
-func NewAccountService(path string) (*AccountService, error) {
+func NewAccountService(path string, perms *permissions.Permissions) (*AccountService, error) {
 	acs := &AccountService{}
 	var err error
 	acs.accRepo, err = scribble.New(path, nil)
 	if err != nil {
 		return nil, err
 	}
+	acs.perms = perms
 	return acs, nil
-}
-
-func dummyAccs() []*Account {
-	accs := make([]*Account, 0)
-	for i := 0; i < 10; i++ {
-		acc := &Account{ID: strconv.Itoa(i), Value: 4242, Groups: []*AccountGroup{&AccountGroup{GroupID: "M6"}}, Owner: AccountOwner{Name: "Moritz" + strconv.Itoa(i)}}
-		accs = append(accs, acc)
-	}
-	for i := 0; i < 10; i++ {
-		acc := &Account{ID: strconv.Itoa(i), Value: 4242, Groups: []*AccountGroup{&AccountGroup{GroupID: "M5"}}, Owner: AccountOwner{Name: "Paul" + strconv.Itoa(i)}}
-		accs = append(accs, acc)
-	}
-	return accs
 }
 
 var ErrIDAlreadyTaken = errors.New("AccountID already taken")
 
-func (service *AccountService) Add(new *Account) error {
-	acc, err := service.GetAccount(new.ID)
-	if err != nil {
-		return err
-	}
-	if acc != nil {
-		return ErrIDAlreadyTaken
-	}
+func (service *AccountService) Add(new *Account, userID string) error {
+	service.perms.SetPermission(new.ID, userID, permissions.CRUD, true)
 
 	if err := service.accRepo.Write(collectionName, new.ID, new); err != nil {
 		return err
@@ -58,22 +43,21 @@ func (service *AccountService) Add(new *Account) error {
 	return nil
 }
 
-func (service *AccountService) CreateAdd(name, groupID string) (*Account, error) {
+func (service *AccountService) CreateAdd(name, userID string) (*Account, error) {
 	acc := &Account{}
 	acc.ID = strconv.FormatInt(time.Now().UnixNano(), 10)
 	acc.Owner.Name = name
-	acc.Groups = []*AccountGroup{&AccountGroup{GroupID: groupID}}
 	acc.Value = 0
 
-	if err := service.accRepo.Write(collectionName, acc.ID, acc); err != nil {
+	err := service.Add(acc, userID)
+	if err != nil {
 		return nil, err
 	}
-
 	return acc, nil
 }
 
 //GetAccounts returns all accounts that are part of this group
-func (service *AccountService) GetAccounts(groupID string) ([]*Account, error) {
+func (service *AccountService) GetAccounts(userID string) ([]*Account, error) {
 	list, err := service.accRepo.ReadAll(collectionName)
 	if err != nil {
 		return nil, err
@@ -86,34 +70,48 @@ func (service *AccountService) GetAccounts(groupID string) ([]*Account, error) {
 		if err != nil {
 			continue //skip invalied entries. maybe implement cleanup...
 		}
-		for _, group := range acc.Groups {
-			if group.GroupID == groupID {
-				res = append(res, acc)
-				break
-			}
+		ok, _ := service.perms.CheckPermissionAny(acc.ID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Read})
+		if ok {
+			res = append(res, acc)
 		}
 	}
 	return res, nil
 }
 
 //GetAccount returns the account indentified by accounts/:id
-func (service *AccountService) GetAccount(aID string) (*Account, error) {
-	acc := &Account{}
-	err := service.accRepo.Read(collectionName, aID, acc)
+func (service *AccountService) GetAccount(accID, userID string) (*Account, error) {
+	ok, err := service.perms.CheckPermissionAny(accID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Read})
 	if err != nil {
 		return nil, err
 	}
+	if !ok {
+		return nil, ErrNotOwnerOfObject
+	}
+
+	acc := &Account{}
+	err = service.accRepo.Read(collectionName, accID, acc)
+	if err != nil {
+		return nil, err
+	}
+
 	return acc, nil
 }
 
 //UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) UpdateAccount(aID string, aDiff int) (*Account, error) {
-	acc, err := service.GetAccount(aID)
+func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*Account, error) {
+	ok, err := service.perms.CheckPermissionAny(accID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Update})
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrNotOwnerOfObject
+	}
+	acc, err := service.GetAccount(accID, userID)
 	if err != nil {
 		return nil, err
 	}
 	acc.Value += aDiff
-	err = service.accRepo.Write(collectionName, aID, acc)
+	err = service.accRepo.Write(collectionName, accID, acc)
 	if err != nil {
 		return nil, err
 	}
@@ -122,36 +120,28 @@ func (service *AccountService) UpdateAccount(aID string, aDiff int) (*Account, e
 
 var ErrNotOwnerOfObject = errors.New("This User is not an owner of this account")
 
-func (service *AccountService) AddAccountToGroup(aID, groupID, aNewGroup string) (*Account, error) {
-	acc, err := service.GetAccount(aID)
-	if err != nil {
-		return nil, err
-	}
-	contains := false
-	for _, group := range acc.Groups {
-		if group.GroupID == groupID {
-			contains = true
-			break
-		}
-	}
-	if !contains {
-		return nil, ErrNotOwnerOfObject
-	}
-	acc.Groups = append(acc.Groups, &AccountGroup{GroupID: aNewGroup})
-	err = service.accRepo.Write(collectionName, aID, acc)
-	if err != nil {
-		return nil, err
-	}
-	return acc, nil
-}
-
-//UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) DeleteAccount(aID string) error {
-	_, err := service.GetAccount(aID)
+func (service *AccountService) GivePermissionToUser(accID, ownerID, newOwnerID string, perm permissions.PermissionType) error {
+	ok, err := service.perms.CheckPermissionAny(accID, ownerID, []permissions.PermissionType{permissions.CRUD, permissions.Read})
 	if err != nil {
 		return err
 	}
-	err = service.accRepo.Delete(collectionName, aID)
+	if !ok {
+		return ErrNotOwnerOfObject
+	}
+
+	return service.perms.SetPermission(accID, newOwnerID, perm, true)
+}
+
+//UpdateAccount updates the account with the difference and returns the new account
+func (service *AccountService) DeleteAccount(accID, userID string) error {
+	ok, err := service.perms.CheckPermissionAny(accID, userID, []permissions.PermissionType{permissions.Delete, permissions.CRUD})
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrNotOwnerOfObject
+	}
+	err = service.accRepo.Delete(collectionName, accID)
 	if err != nil {
 		return err
 	}
