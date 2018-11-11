@@ -2,6 +2,7 @@ package permissions
 
 import (
 	"errors"
+	"os"
 
 	"github.com/nanobox-io/golang-scribble"
 )
@@ -42,7 +43,7 @@ func NewPermissions(path string) (*Permissions, error) {
 		return nil, err
 	}
 	err = perm.permRepo.Read("permissions", "permissions", &perm.permmap)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 	if perm.permmap == nil {

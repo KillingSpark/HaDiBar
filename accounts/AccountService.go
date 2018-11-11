@@ -34,8 +34,11 @@ func NewAccountService(path string, perms *permissions.Permissions) (*AccountSer
 
 var ErrIDAlreadyTaken = errors.New("AccountID already taken")
 
-func (service *AccountService) Add(new *Account, userID string) error {
-	service.perms.SetPermission(new.ID, userID, permissions.CRUD, true)
+func (service *AccountService) Add(new *Account, userID string, perm permissions.PermissionType, perms ...permissions.PermissionType) error {
+	service.perms.SetPermission(new.ID, userID, perm, true)
+	for _, perm := range perms {
+		service.perms.SetPermission(new.ID, userID, perm, true)
+	}
 
 	if err := service.accRepo.Write(collectionName, new.ID, new); err != nil {
 		return err
@@ -44,17 +47,34 @@ func (service *AccountService) Add(new *Account, userID string) error {
 	return nil
 }
 
-func (service *AccountService) CreateAdd(name, userID string) (*Account, error) {
+func (service *AccountService) CreateAdd(name, userID string, perm permissions.PermissionType, perms ...permissions.PermissionType) (*Account, error) {
 	acc := &Account{}
 	acc.ID = strconv.FormatInt(time.Now().UnixNano(), 10)
 	acc.Owner.Name = name
 	acc.Value = 0
 
-	err := service.Add(acc, userID)
+	err := service.Add(acc, userID, perm, perms...)
 	if err != nil {
 		return nil, err
 	}
 	return acc, nil
+}
+
+func (service *AccountService) isMainAccount(acc *Account) bool {
+	return acc.Owner.Name == "bank"
+}
+
+func (service *AccountService) containsMainAccount(accs []*Account) bool {
+	for _, acc := range accs {
+		if service.isMainAccount(acc) {
+			return true
+		}
+	}
+	return false
+}
+
+func (service *AccountService) addMainAccount(userID string) (*Account, error) {
+	return service.CreateAdd("bank", userID, permissions.Read, permissions.Update)
 }
 
 //GetAccounts returns all accounts that are part of this group
@@ -76,6 +96,15 @@ func (service *AccountService) GetAccounts(userID string) ([]*Account, error) {
 			res = append(res, acc)
 		}
 	}
+
+	if !service.containsMainAccount(res) {
+		acc, err := service.addMainAccount(userID)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, acc)
+	}
+
 	return res, nil
 }
 

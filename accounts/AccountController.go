@@ -189,7 +189,7 @@ func (controller *AccountController) NewAccount(ctx *gin.Context) {
 		}
 	}
 
-	acc, err := controller.service.CreateAdd(name, info.Name)
+	acc, err := controller.service.CreateAdd(name, info.Name, permissions.CRUD)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse("Couldn't create account: " + err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
