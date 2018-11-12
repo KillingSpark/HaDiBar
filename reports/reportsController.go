@@ -2,6 +2,7 @@ package reports
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/killingspark/hadibar/permissions"
@@ -127,37 +128,43 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 			return
 		}
 	}
+	accID := ctx.PostForm("accid")
 
-	report := "<table><th>Source</th><th>Target</th><th>Amount</th>"
-
-	txs, err := rc.accsrv.GetTransactions("", info.Name)
+	txs, err := rc.accsrv.GetTransactions(accID, info.Name)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return
 	}
+
 	idMap := make(map[string]string)
+	report := "<table><th>Source</th><th>Target</th><th>Amount</th>"
+
+	sort.Slice(txs, func(i, j int) bool {
+		return txs[i].Timestamp.After(txs[j].Timestamp)
+	})
+
 	for _, tx := range txs {
-		var srcName string
-		var trgtName string
 		srcName, ok := idMap[tx.SourceID]
 		if !ok {
-			acc, _ := rc.accsrv.GetAccount(tx.SourceID, info.Name)
+			acc, err := rc.accsrv.GetAccount(tx.SourceID, info.Name)
 			if err != nil {
 				continue
 			}
 			idMap[tx.SourceID] = acc.Owner.Name
 			srcName = acc.Owner.Name
 		}
-		trgtName, ok = idMap[tx.TargetID]
+
+		trgtName, ok := idMap[tx.TargetID]
 		if !ok {
 			acc, err := rc.accsrv.GetAccount(tx.TargetID, info.Name)
 			if err != nil {
+				println(err.Error())
 				continue
 			}
 			idMap[tx.TargetID] = acc.Owner.Name
-			srcName = acc.Owner.Name
+			trgtName = acc.Owner.Name
 		}
 		report += makeTransactionRow(srcName, trgtName, tx.Amount)
 	}

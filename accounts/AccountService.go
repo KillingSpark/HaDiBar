@@ -188,7 +188,7 @@ func (service *AccountService) Transaction(SourceID, TargetID, userID string, am
 	trans.Timestamp = time.Now()
 	trans.Amount = amount
 	trans.ID = strconv.Itoa(trans.Timestamp.Nanosecond())
-	err = service.accRepo.Write(collectionNameTrans, trans.ID, target)
+	err = service.accRepo.Write(collectionNameTrans, trans.ID, trans)
 	service.perms.SetPermission(trans.ID, userID, permissions.CRUD, true)
 	if err != nil {
 		return err
@@ -202,8 +202,8 @@ func (service *AccountService) GetTransactions(accID, userID string) ([]*Transac
 		return nil, err
 	}
 	res := make([]*Transaction, 0)
-	tx := &Transaction{}
 	for _, item := range list {
+		tx := &Transaction{}
 		err := json.Unmarshal([]byte(item), tx)
 		if err != nil {
 			continue //skip invalid entries

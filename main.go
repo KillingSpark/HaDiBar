@@ -43,6 +43,7 @@ func makeReportRoutes(router *gin.RouterGroup, rc *reports.ReportsController) {
 	repGroup := router.Group("/reports")
 	repGroup.GET("/accounts", rc.GenerateAccountList)
 	repGroup.GET("/beverages", rc.GenerateBeverageMatrix)
+	repGroup.GET("/transactions", rc.GenerateTransactionList)
 }
 
 func makeLoginRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {
