@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/killingspark/hadibar/permissions"
-
-	"github.com/nanobox-io/golang-scribble"
+	scribble "github.com/nanobox-io/golang-scribble"
 )
 
 //AccountService is a service for accessing accounts
@@ -91,7 +90,7 @@ func (service *AccountService) GetAccounts(userID string) ([]*Account, error) {
 		if err != nil {
 			continue //skip invalied entries. maybe implement cleanup...
 		}
-		ok, _ := service.perms.CheckPermissionAny(acc.ID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Read})
+		ok, _ := service.perms.CheckPermissionAny(acc.ID, userID, permissions.CRUD, permissions.Read)
 		if ok {
 			res = append(res, acc)
 		}
@@ -110,7 +109,7 @@ func (service *AccountService) GetAccounts(userID string) ([]*Account, error) {
 
 //GetAccount returns the account indentified by accounts/:id
 func (service *AccountService) GetAccount(accID, userID string) (*Account, error) {
-	ok, err := service.perms.CheckPermissionAny(accID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Read})
+	ok, err := service.perms.CheckPermissionAny(accID, userID, permissions.CRUD, permissions.Read)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +128,7 @@ func (service *AccountService) GetAccount(accID, userID string) (*Account, error
 
 //UpdateAccount updates the account with the difference and returns the new account
 func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*Account, error) {
-	ok, err := service.perms.CheckPermissionAny(accID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Update})
+	ok, err := service.perms.CheckPermissionAny(accID, userID, permissions.CRUD, permissions.Update)
 	if err != nil {
 		return nil, err
 	}
@@ -149,15 +148,15 @@ func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*
 }
 
 //UpdateAccount updates the account with the difference and returns the new account
-func (service *AccountService) Transaction(sourceID, targetID, userID string, amount int) error {
-	ok, err := service.perms.CheckPermissionAny(sourceID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Update})
+func (service *AccountService) Transaction(SourceID, TargetID, userID string, amount int) error {
+	ok, err := service.perms.CheckPermissionAny(SourceID, userID, permissions.CRUD, permissions.Update)
 	if err != nil {
 		return err
 	}
 	if !ok {
 		return ErrNotOwnerOfObject
 	}
-	ok, err = service.perms.CheckPermissionAny(targetID, userID, []permissions.PermissionType{permissions.CRUD, permissions.Update})
+	ok, err = service.perms.CheckPermissionAny(TargetID, userID, permissions.CRUD, permissions.Update)
 	if err != nil {
 		return err
 	}
@@ -165,11 +164,11 @@ func (service *AccountService) Transaction(sourceID, targetID, userID string, am
 		return ErrNotOwnerOfObject
 	}
 
-	source, err := service.GetAccount(sourceID, userID)
+	source, err := service.GetAccount(SourceID, userID)
 	if err != nil {
 		return err
 	}
-	target, err := service.GetAccount(targetID, userID)
+	target, err := service.GetAccount(TargetID, userID)
 	if err != nil {
 		return err
 	}
@@ -184,20 +183,44 @@ func (service *AccountService) Transaction(sourceID, targetID, userID string, am
 		return err
 	}
 	trans := &Transaction{}
-	trans.sourceID = source.ID
-	trans.targetID = target.ID
-	trans.timestamp = time.Now()
-	err = service.accRepo.Write(collectionNameTrans, strconv.Itoa(trans.timestamp.Nanosecond()), target)
+	trans.SourceID = source.ID
+	trans.TargetID = target.ID
+	trans.Timestamp = time.Now()
+	trans.Amount = amount
+	trans.ID = strconv.Itoa(trans.Timestamp.Nanosecond())
+	err = service.accRepo.Write(collectionNameTrans, trans.ID, target)
+	service.perms.SetPermission(trans.ID, userID, permissions.CRUD, true)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
+func (service *AccountService) GetTransactions(accID, userID string) ([]*Transaction, error) {
+	list, err := service.accRepo.ReadAll(collectionNameTrans)
+	if err != nil {
+		return nil, err
+	}
+	res := make([]*Transaction, 0)
+	tx := &Transaction{}
+	for _, item := range list {
+		err := json.Unmarshal([]byte(item), tx)
+		if err != nil {
+			continue //skip invalid entries
+		}
+		if ok, _ := service.perms.CheckPermissionAny(tx.ID, userID, permissions.Read, permissions.CRUD); ok {
+			if accID == "" || (accID == tx.SourceID || accID == tx.TargetID) {
+				res = append(res, tx)
+			}
+		}
+	}
+	return res, nil
+}
+
 var ErrNotOwnerOfObject = errors.New("This User is not an owner of this account")
 
 func (service *AccountService) GivePermissionToUser(accID, ownerID, newOwnerID string, perm permissions.PermissionType) error {
-	ok, err := service.perms.CheckPermissionAny(accID, ownerID, []permissions.PermissionType{permissions.CRUD, permissions.Read})
+	ok, err := service.perms.CheckPermissionAny(accID, ownerID, permissions.CRUD, permissions.Read)
 	if err != nil {
 		return err
 	}
@@ -210,7 +233,7 @@ func (service *AccountService) GivePermissionToUser(accID, ownerID, newOwnerID s
 
 //UpdateAccount updates the account with the difference and returns the new account
 func (service *AccountService) DeleteAccount(accID, userID string) error {
-	ok, err := service.perms.CheckPermissionAny(accID, userID, []permissions.PermissionType{permissions.Delete, permissions.CRUD})
+	ok, err := service.perms.CheckPermissionAny(accID, userID, permissions.Delete, permissions.CRUD)
 	if err != nil {
 		return err
 	}

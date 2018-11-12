@@ -1,11 +1,10 @@
-module killingspark/hadibar
+module github.com/killingspark/hadibar
 
 require (
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v1.3.0
 	github.com/golang/protobuf v1.2.0 // indirect
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
-	github.com/killingspark/hadibar v0.0.0-20181112072905-bb763890cdfa
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/nanobox-io/golang-scribble v0.0.0-20180621225840-336beac0a992
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7

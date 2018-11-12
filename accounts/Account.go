@@ -14,7 +14,9 @@ type AccountOwner struct {
 }
 
 type Transaction struct {
-	sourceID  string
-	targetID  string
-	timestamp time.Time
+	SourceID  string
+	TargetID  string
+	Amount    int
+	Timestamp time.Time
+	ID        string
 }

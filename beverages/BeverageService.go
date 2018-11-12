@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/killingspark/hadibar/permissions"
-
-	"github.com/nanobox-io/golang-scribble"
+	scribble "github.com/nanobox-io/golang-scribble"
 
 	"strconv"
 )
@@ -46,7 +45,7 @@ func (service *BeverageService) GetBeverages(userID string) ([]*Beverage, error)
 		if err != nil {
 			continue
 		}
-		if ok, _ := service.perms.CheckPermissionAny(bev.ID, userID, []permissions.PermissionType{permissions.Read, permissions.CRUD}); ok {
+		if ok, _ := service.perms.CheckPermissionAny(bev.ID, userID, permissions.Read, permissions.CRUD); ok {
 			bevs = append(bevs, bev)
 		}
 	}
@@ -63,7 +62,7 @@ func (service *BeverageService) GetBeverage(bevID, userID string) (*Beverage, er
 	if err != nil {
 		return nil, ErrInvalidID
 	}
-	ok, err := service.perms.CheckPermissionAny(bev.ID, userID, []permissions.PermissionType{permissions.Read, permissions.CRUD})
+	ok, err := service.perms.CheckPermissionAny(bev.ID, userID, permissions.Read, permissions.CRUD)
 	if ok {
 		return bev, nil
 	}
@@ -87,7 +86,7 @@ func (service *BeverageService) NewBeverage(userID, aName string, aValue int) (*
 //UpdateBeverage updates the data for the identified beverage (eg name and value)
 func (service *BeverageService) UpdateBeverage(bevID, userID, aName string, aValue int) (*Beverage, error) {
 
-	ok, err := service.perms.CheckPermissionAny(bevID, userID, []permissions.PermissionType{permissions.Delete, permissions.CRUD})
+	ok, err := service.perms.CheckPermissionAny(bevID, userID, permissions.Delete, permissions.CRUD)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +112,7 @@ func (service *BeverageService) UpdateBeverage(bevID, userID, aName string, aVal
 //DeleteBeverage deletes the identified beverage
 func (service *BeverageService) DeleteBeverage(bevID, userID string) error {
 
-	ok, err := service.perms.CheckPermissionAny(bevID, userID, []permissions.PermissionType{permissions.Delete, permissions.CRUD})
+	ok, err := service.perms.CheckPermissionAny(bevID, userID, permissions.Delete, permissions.CRUD)
 	if err != nil {
 		return err
 	}
@@ -131,7 +130,7 @@ func (service *BeverageService) DeleteBeverage(bevID, userID string) error {
 var ErrNoPermission = errors.New("No permission for action set")
 
 func (service *BeverageService) GivePermissionToUser(bevID, ownerID, newOwnerID string, perm permissions.PermissionType) error {
-	ok, err := service.perms.CheckPermissionAny(bevID, ownerID, []permissions.PermissionType{permissions.Update, permissions.CRUD})
+	ok, err := service.perms.CheckPermissionAny(bevID, ownerID, permissions.Update, permissions.CRUD)
 	if err != nil {
 		return err
 	}

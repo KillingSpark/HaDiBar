@@ -82,7 +82,7 @@ func (p *Permissions) DeletePermission(objID, usrID string, permission Permissio
 	return err
 }
 
-func (p *Permissions) CheckPermissionAny(objID, usrID string, permissions []PermissionType) (bool, error) {
+func (p *Permissions) CheckPermissionAny(objID, usrID string, permissions ...PermissionType) (bool, error) {
 	for _, permission := range permissions {
 		o, ok := p.permmap[ObjectID(objID)]
 		if ok {

@@ -110,3 +110,59 @@ func (rc *ReportsController) GenerateBeverageMatrix(ctx *gin.Context) {
 	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
 }
+
+func makeTransactionRow(srcName, trgtName string, amount int) string {
+	row := "<tr><td>" + srcName + "</td><td>" + trgtName + "</td><td>" + strconv.Itoa(amount) + "</td></tr>"
+	return row
+}
+
+func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
+	var info *authStuff.LoginInfo
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok = inter.(*authStuff.LoginInfo)
+		if !ok {
+			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	report := "<table><th>Source</th><th>Target</th><th>Amount</th>"
+
+	txs, err := rc.accsrv.GetTransactions("", info.Name)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+	idMap := make(map[string]string)
+	for _, tx := range txs {
+		var srcName string
+		var trgtName string
+		srcName, ok := idMap[tx.SourceID]
+		if !ok {
+			acc, _ := rc.accsrv.GetAccount(tx.SourceID, info.Name)
+			if err != nil {
+				continue
+			}
+			idMap[tx.SourceID] = acc.Owner.Name
+			srcName = acc.Owner.Name
+		}
+		trgtName, ok = idMap[tx.TargetID]
+		if !ok {
+			acc, err := rc.accsrv.GetAccount(tx.TargetID, info.Name)
+			if err != nil {
+				continue
+			}
+			idMap[tx.TargetID] = acc.Owner.Name
+			srcName = acc.Owner.Name
+		}
+		report += makeTransactionRow(srcName, trgtName, tx.Amount)
+	}
+	report += "</table>"
+	response, _ := restapi.NewOkResponse(report).Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
+	ctx.Next()
+}
