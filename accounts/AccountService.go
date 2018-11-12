@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/killingspark/HaDiBar/permissions"
+	"github.com/killingspark/hadibar/permissions"
 
 	"github.com/nanobox-io/golang-scribble"
 )

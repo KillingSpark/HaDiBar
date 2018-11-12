@@ -8,13 +8,13 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/HaDiBar/accounts"
-	"github.com/killingspark/HaDiBar/authStuff"
-	"github.com/killingspark/HaDiBar/beverages"
-	"github.com/killingspark/HaDiBar/logger"
-	"github.com/killingspark/HaDiBar/permissions"
-	"github.com/killingspark/HaDiBar/reports"
-	"github.com/killingspark/HaDiBar/settings"
+	"github.com/killingspark/hadibar/accounts"
+	"github.com/killingspark/hadibar/authStuff"
+	"github.com/killingspark/hadibar/beverages"
+	"github.com/killingspark/hadibar/logger"
+	"github.com/killingspark/hadibar/permissions"
+	"github.com/killingspark/hadibar/reports"
+	"github.com/killingspark/hadibar/settings"
 )
 
 //making routes seperate for better readability

@@ -5,7 +5,7 @@ import (
 
 	"strings"
 
-	"github.com/killingspark/HaDiBar/settings"
+	"github.com/killingspark/hadibar/settings"
 	logging "github.com/op/go-logging"
 )
 

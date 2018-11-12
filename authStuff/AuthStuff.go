@@ -8,9 +8,9 @@ import (
 	"io"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/HaDiBar/logger"
-	"github.com/killingspark/HaDiBar/restapi"
-	"github.com/killingspark/HaDiBar/settings"
+	"github.com/killingspark/hadibar/logger"
+	"github.com/killingspark/hadibar/restapi"
+	"github.com/killingspark/hadibar/settings"
 )
 
 //Entity (s) represent owners of an Account
