@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/killingspark/hadibar/permissions"
 
@@ -112,8 +113,8 @@ func (rc *ReportsController) GenerateBeverageMatrix(ctx *gin.Context) {
 	ctx.Next()
 }
 
-func makeTransactionRow(srcName, trgtName string, amount int) string {
-	row := "<tr><td>" + srcName + "</td><td>" + trgtName + "</td><td>" + strconv.Itoa(amount) + "</td></tr>"
+func makeTransactionRow(srcName, trgtName string, amount int, time string) string {
+	row := "<tr><td>" + srcName + "</td><td>" + trgtName + "</td><td>" + strconv.Itoa(amount) + "</td><td>" + time + "</td></tr>"
 	return row
 }
 
@@ -139,21 +140,27 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 	}
 
 	idMap := make(map[string]string)
-	report := "<table><th>Source</th><th>Target</th><th>Amount</th>"
+	report := "<table><th>Source</th><th>Target</th><th>Amount</th><th>Time</th>"
 
 	sort.Slice(txs, func(i, j int) bool {
 		return txs[i].Timestamp.After(txs[j].Timestamp)
 	})
 
 	for _, tx := range txs {
-		srcName, ok := idMap[tx.SourceID]
-		if !ok {
-			acc, err := rc.accsrv.GetAccount(tx.SourceID, info.Name)
-			if err != nil {
-				continue
+		var srcName string
+		if tx.SourceID == "0" {
+			srcName = "Outside"
+		} else {
+			var ok bool
+			srcName, ok = idMap[tx.SourceID]
+			if !ok {
+				acc, err := rc.accsrv.GetAccount(tx.SourceID, info.Name)
+				if err != nil {
+					continue
+				}
+				idMap[tx.SourceID] = acc.Owner.Name
+				srcName = acc.Owner.Name
 			}
-			idMap[tx.SourceID] = acc.Owner.Name
-			srcName = acc.Owner.Name
 		}
 
 		trgtName, ok := idMap[tx.TargetID]
@@ -166,7 +173,7 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 			idMap[tx.TargetID] = acc.Owner.Name
 			trgtName = acc.Owner.Name
 		}
-		report += makeTransactionRow(srcName, trgtName, tx.Amount)
+		report += makeTransactionRow(srcName, trgtName, tx.Amount, tx.Timestamp.Format(time.UnixDate))
 	}
 	report += "</table>"
 	response, _ := restapi.NewOkResponse(report).Marshal()

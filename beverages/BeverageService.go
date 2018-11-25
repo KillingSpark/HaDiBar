@@ -71,8 +71,8 @@ func (service *BeverageService) GetBeverage(bevID, userID string) (*Beverage, er
 }
 
 //NewBeverage creates a new beverage and stores it in the database
-func (service *BeverageService) NewBeverage(userID, aName string, aValue int) (*Beverage, error) {
-	bev := &Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue}
+func (service *BeverageService) NewBeverage(userID, aName string, aValue, aAvailable int) (*Beverage, error) {
+	bev := &Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue, Available: aAvailable}
 
 	service.perms.SetPermission(bev.ID, userID, permissions.CRUD, true)
 
@@ -84,7 +84,7 @@ func (service *BeverageService) NewBeverage(userID, aName string, aValue int) (*
 }
 
 //UpdateBeverage updates the data for the identified beverage (eg name and value)
-func (service *BeverageService) UpdateBeverage(bevID, userID, aName string, aValue int) (*Beverage, error) {
+func (service *BeverageService) UpdateBeverage(bevID, userID, aName string, aValue, aAvailable int) (*Beverage, error) {
 
 	ok, err := service.perms.CheckPermissionAny(bevID, userID, permissions.Delete, permissions.CRUD)
 	if err != nil {
@@ -100,6 +100,7 @@ func (service *BeverageService) UpdateBeverage(bevID, userID, aName string, aVal
 	}
 	bev.Name = aName
 	bev.Value = aValue
+	bev.Available = aAvailable
 
 	err = service.bevRepo.Write(collectionName, bevID, bev)
 	if err != nil {

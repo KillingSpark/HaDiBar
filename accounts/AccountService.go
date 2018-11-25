@@ -149,42 +149,44 @@ func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*
 
 //UpdateAccount updates the account with the difference and returns the new account
 func (service *AccountService) Transaction(SourceID, TargetID, userID string, amount int) error {
-	ok, err := service.perms.CheckPermissionAny(SourceID, userID, permissions.CRUD, permissions.Update)
+	if SourceID != "0" { //0 is reserved for infusions from outside the system
+		ok, err := service.perms.CheckPermissionAny(SourceID, userID, permissions.CRUD, permissions.Update)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return ErrNotOwnerOfObject
+		}
+		source, err := service.GetAccount(SourceID, userID)
+		if err != nil {
+			return err
+		}
+		source.Value -= amount
+		err = service.accRepo.Write(collectionName, source.ID, source)
+		if err != nil {
+			return err
+		}
+	}
+	ok, err := service.perms.CheckPermissionAny(TargetID, userID, permissions.CRUD, permissions.Update)
 	if err != nil {
 		return err
 	}
 	if !ok {
 		return ErrNotOwnerOfObject
-	}
-	ok, err = service.perms.CheckPermissionAny(TargetID, userID, permissions.CRUD, permissions.Update)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return ErrNotOwnerOfObject
-	}
-
-	source, err := service.GetAccount(SourceID, userID)
-	if err != nil {
-		return err
 	}
 	target, err := service.GetAccount(TargetID, userID)
 	if err != nil {
 		return err
 	}
-	source.Value -= amount
-	err = service.accRepo.Write(collectionName, source.ID, source)
-	if err != nil {
-		return err
-	}
+
 	target.Value += amount
 	err = service.accRepo.Write(collectionName, target.ID, target)
 	if err != nil {
 		return err
 	}
 	trans := &Transaction{}
-	trans.SourceID = source.ID
-	trans.TargetID = target.ID
+	trans.SourceID = SourceID
+	trans.TargetID = TargetID
 	trans.Timestamp = time.Now()
 	trans.Amount = amount
 	trans.ID = strconv.Itoa(trans.Timestamp.Nanosecond())
@@ -208,7 +210,10 @@ func (service *AccountService) GetTransactions(accID, userID string) ([]*Transac
 		if err != nil {
 			continue //skip invalid entries
 		}
-		if ok, _ := service.perms.CheckPermissionAny(tx.ID, userID, permissions.Read, permissions.CRUD); ok {
+		if ok, err := service.perms.CheckPermissionAny(tx.ID, userID, permissions.Read, permissions.CRUD); ok {
+			if err != nil {
+				return nil, err
+			}
 			if accID == "" || (accID == tx.SourceID || accID == tx.TargetID) {
 				res = append(res, tx)
 			}

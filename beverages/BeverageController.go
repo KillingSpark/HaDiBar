@@ -95,7 +95,15 @@ func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 		return
 	}
 
-	nb, err := controller.service.NewBeverage(info.Name, ctx.PostForm("name"), nv)
+	na, err := strconv.Atoi(ctx.PostForm("available"))
+	if err != nil {
+		errResp, _ := restapi.NewErrorResponse("Invalid available").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
+
+	nb, err := controller.service.NewBeverage(info.Name, ctx.PostForm("name"), nv, na)
 	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Couldnt save new beverage").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
@@ -130,6 +138,13 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+	na, err := strconv.Atoi(ctx.PostForm("available"))
+	if err != nil {
+		errResp, _ := restapi.NewErrorResponse("Invalid available").Marshal()
+		fmt.Fprint(ctx.Writer, string(errResp))
+		ctx.Abort()
+		return
+	}
 	nn := ctx.PostForm("name")
 
 	var info *authStuff.LoginInfo
@@ -143,7 +158,7 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 		}
 	}
 
-	nb, err := controller.service.UpdateBeverage(ID, info.Name, nn, nv)
+	nb, err := controller.service.UpdateBeverage(ID, info.Name, nn, nv, na)
 	if err != nil {
 		errResp, _ := restapi.NewErrorResponse("Couldnt update beverage").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
