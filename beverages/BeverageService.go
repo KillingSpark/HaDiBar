@@ -20,6 +20,10 @@ type BeverageService struct {
 
 var collectionName = "beverages"
 
+var ErrInvalidID = errors.New("ID for beverage is invalid")
+var ErrInvalidGroupID = errors.New("ID for beverage is not in your group")
+var ErrNoPermission = errors.New("No permission for this action")
+
 //NewBeverageService creates a new Service
 func NewBeverageService(path string, perms *permissions.Permissions) (*BeverageService, error) {
 	bs := &BeverageService{}
@@ -51,9 +55,6 @@ func (service *BeverageService) GetBeverages(userID string) ([]*Beverage, error)
 	}
 	return bevs, nil
 }
-
-var ErrInvalidID = errors.New("ID for beverage is invalid")
-var ErrInvalidGroupID = errors.New("ID for beverage is not in your group")
 
 //GetBeverage returns the identified beverage
 func (service *BeverageService) GetBeverage(bevID, userID string) (*Beverage, error) {
@@ -128,8 +129,7 @@ func (service *BeverageService) DeleteBeverage(bevID, userID string) error {
 	return nil
 }
 
-var ErrNoPermission = errors.New("No permission for action set")
-
+//GivePermissionToUser gives the newOwner the permissions
 func (service *BeverageService) GivePermissionToUser(bevID, ownerID, newOwnerID string, perm permissions.PermissionType) error {
 	ok, err := service.perms.CheckPermissionAny(bevID, ownerID, permissions.Update, permissions.CRUD)
 	if err != nil {
