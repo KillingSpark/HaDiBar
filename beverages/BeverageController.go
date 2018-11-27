@@ -10,7 +10,6 @@ import (
 	"github.com/killingspark/hadibar/authStuff"
 	"github.com/killingspark/hadibar/permissions"
 	"github.com/killingspark/hadibar/restapi"
-	"github.com/killingspark/hadibar/settings"
 )
 
 //BeverageController : Controller for the Beverages
@@ -19,10 +18,10 @@ type BeverageController struct {
 }
 
 //NewBeverageController creates a new BeverageController and initializes its service
-func NewBeverageController(perms *permissions.Permissions) (*BeverageController, error) {
+func NewBeverageController(perms *permissions.Permissions, datadir string) (*BeverageController, error) {
 	bc := &BeverageController{}
 	var err error
-	bc.service, err = NewBeverageService(settings.S.DataDir, perms)
+	bc.service, err = NewBeverageService(datadir, perms)
 	if err != nil {
 		return nil, err
 	}

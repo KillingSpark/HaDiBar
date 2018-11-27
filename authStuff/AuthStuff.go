@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/hadibar/logger"
 	"github.com/killingspark/hadibar/restapi"
-	"github.com/killingspark/hadibar/settings"
 )
 
 //LoginInfo is passed into the context if the session has a logged in user
@@ -39,11 +38,11 @@ type Auth struct {
 }
 
 //NewAuth is a constructor for Auth
-func NewAuth() (*Auth, error) {
+func NewAuth(datadir string) (*Auth, error) {
 	auth := &Auth{}
 	auth.sessionMap = make(map[string](*Session))
 	var err error
-	auth.tester, err = NewLoginService(settings.S.DataDir)
+	auth.tester, err = NewLoginService(datadir)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +170,7 @@ func (auth *Auth) getSession(id string) (*Session, error) {
 func GetLoginInfoFromCtx(ctx *gin.Context) (*LoginInfo, error) {
 	var info *LoginInfo
 
-	if inter, ok := ctx.Get("logininfo"); !ok {
+	if inter, ok := ctx.Get("logininfo"); ok {
 		info, ok = inter.(*LoginInfo)
 		if !ok {
 			return nil, errors.New("Not a LoginInfo while expecting LoginInfo. This is an internal misbehaviour. Contact an admin about this")

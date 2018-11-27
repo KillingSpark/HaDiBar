@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/hadibar/authStuff"
 	"github.com/killingspark/hadibar/restapi"
-	"github.com/killingspark/hadibar/settings"
 )
 
 //AccountController is the controller for accounts
@@ -19,10 +18,10 @@ type AccountController struct {
 }
 
 //NewAccountController creates a new AccountController and initializes the service
-func NewAccountController(perms *permissions.Permissions) (*AccountController, error) {
+func NewAccountController(perms *permissions.Permissions, datadir string) (*AccountController, error) {
 	acC := &AccountController{}
 	var err error
-	acC.service, err = NewAccountService(settings.S.DataDir, perms)
+	acC.service, err = NewAccountService(datadir, perms)
 	if err != nil {
 		return nil, err
 	}

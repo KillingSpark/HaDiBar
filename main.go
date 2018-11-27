@@ -14,7 +14,8 @@ import (
 	"github.com/killingspark/hadibar/logger"
 	"github.com/killingspark/hadibar/permissions"
 	"github.com/killingspark/hadibar/reports"
-	"github.com/killingspark/hadibar/settings"
+
+	"github.com/spf13/viper"
 )
 
 //making routes seperate for better readability
@@ -54,7 +55,11 @@ func makeLoginRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {
 }
 
 func main() {
-	settings.ReadSettings()
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("$HOME/.config/hadibar/")
+	viper.AddConfigPath("/etc/hadibar")
+	viper.SetConfigName("settings")
+	viper.ReadInConfig()
 	startServer()
 }
 
@@ -63,34 +68,34 @@ func startServer() {
 	router := gin.New()
 
 	//serves the wepapp folder as /app
-	router.StaticFS(settings.S.WebappRoute, http.Dir(settings.S.WebappPath))
+	router.StaticFS(viper.GetString("WebAppRoute"), http.Dir(viper.GetString("WebAppDir")))
 
 	//redirect users from / to /app
 	router.GET("/", func(ctx *gin.Context) {
-		ctx.Redirect(300, settings.S.WebappRoute)
+		ctx.Redirect(300, viper.GetString("WebAppRoute"))
 	})
 
-	auth, err := authStuff.NewAuth()
+	auth, err := authStuff.NewAuth(viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
 
-	perms, err := permissions.NewPermissions(settings.S.DataDir)
+	perms, err := permissions.NewPermissions(viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
 
-	bc, err := beverages.NewBeverageController(perms)
+	bc, err := beverages.NewBeverageController(perms, viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
-	ac, err := accounts.NewAccountController(perms)
+	ac, err := accounts.NewAccountController(perms, viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
 	lc := authStuff.NewLoginController(auth)
 
-	rc, err := reports.NewReportsController(perms)
+	rc, err := reports.NewReportsController(perms, viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -106,5 +111,5 @@ func startServer() {
 	makeReportRoutes(floorSpecificGroup, rc)
 	makeLoginRoutes(apiGroup, lc)
 
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(settings.S.Port), router))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(viper.GetInt("Port")), router))
 }

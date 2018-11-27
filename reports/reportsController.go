@@ -13,7 +13,6 @@ import (
 	"github.com/killingspark/hadibar/authStuff"
 	"github.com/killingspark/hadibar/beverages"
 	"github.com/killingspark/hadibar/restapi"
-	"github.com/killingspark/hadibar/settings"
 )
 
 type ReportsController struct {
@@ -21,12 +20,12 @@ type ReportsController struct {
 	accsrv *accounts.AccountService
 }
 
-func NewReportsController(perms *permissions.Permissions) (*ReportsController, error) {
-	bevsrv, err := beverages.NewBeverageService(settings.S.DataDir, perms)
+func NewReportsController(perms *permissions.Permissions, datadir string) (*ReportsController, error) {
+	bevsrv, err := beverages.NewBeverageService(datadir, perms)
 	if err != nil {
 		return nil, err
 	}
-	accsrv, err := accounts.NewAccountService(settings.S.DataDir, perms)
+	accsrv, err := accounts.NewAccountService(datadir, perms)
 	if err != nil {
 		return nil, err
 	}

@@ -5,8 +5,8 @@ import (
 
 	"strings"
 
-	"github.com/killingspark/hadibar/settings"
 	logging "github.com/op/go-logging"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 //PrepareLogger puts a format and backend to the logger
 func PrepareLogger() {
 	formatted := logging.AddModuleLevel(logging.NewBackendFormatter(logging.NewLogBackend(os.Stdout, "", 0), format))
-	level := strings.ToUpper(settings.S.LoggingLevel)
+	level := strings.ToUpper(viper.GetString("LoggingLevel"))
 
 	switch level {
 	case "DEBUG":
