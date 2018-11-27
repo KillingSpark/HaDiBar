@@ -13,7 +13,7 @@ import (
 	"github.com/killingspark/hadibar/settings"
 )
 
-//Entity (s) represent owners of an Account
+//LoginInfo is passed into the context if the session has a logged in user
 type LoginInfo struct {
 	Name     string
 	LoggedIn bool
@@ -21,20 +21,24 @@ type LoginInfo struct {
 	Pwhash   string
 }
 
+//Authentikator is an interface that will allow for other sign-in methods later
 type Authentikator interface {
 	isValid(id, pw string) (*LoginInfo, error)
 }
 
+//Session identifies a session with a Client. If the client logs in, the session remembers the login info (without the password of course) until the client logs out.
 type Session struct {
 	id   string
 	info *LoginInfo
 }
 
+//Auth maps session ids to sessions
 type Auth struct {
 	sessionMap map[string](*Session)
 	tester     Authentikator
 }
 
+//NewAuth is a constructor for Auth
 func NewAuth() (*Auth, error) {
 	auth := &Auth{}
 	auth.sessionMap = make(map[string](*Session))
@@ -46,6 +50,7 @@ func NewAuth() (*Auth, error) {
 	return auth, nil
 }
 
+//AddNewSession creates a new sessionid and remembers the session for later reference by the client
 func (auth *Auth) AddNewSession() string {
 	ID := make([]byte, 32)
 	if _, err := io.ReadFull(rand.Reader, ID); err != nil {
@@ -60,8 +65,9 @@ func (auth *Auth) AddNewSession() string {
 
 var ErrAlreadyLoggedIn = errors.New("Already logged in")
 
-func (auth *Auth) LogIn(id, name, password string) error {
-	session, ok := auth.sessionMap[id]
+//LogIn checks the credentials against the authentikator and marks the session as loggedin
+func (auth *Auth) LogIn(sesID, name, password string) error {
+	session, ok := auth.sessionMap[sesID]
 	if !ok {
 		return ErrInvalidSession
 	}
@@ -82,6 +88,7 @@ func (auth *Auth) LogIn(id, name, password string) error {
 	return nil
 }
 
+//GetSessionInfo maps the sessionid to the LoginInfo
 func (auth *Auth) GetSessionInfo(id string) (*LoginInfo, error) {
 	session, err := auth.getSession(id)
 	if err != nil {
@@ -92,6 +99,7 @@ func (auth *Auth) GetSessionInfo(id string) (*LoginInfo, error) {
 
 var ErrInvalidSession = errors.New("Session not valid")
 
+//LogOut clears the LoginInfo of this session
 func (auth *Auth) LogOut(id string) error {
 	session, ok := auth.sessionMap[id]
 	if !ok {
@@ -102,7 +110,7 @@ func (auth *Auth) LogOut(id string) error {
 	return nil
 }
 
-//CheckSession checks if the token is valid and then executes the given handle
+//CheckSession checks if the sessionID is valid. If no sessionID is given, a new one is created and added as a header
 func (auth *Auth) CheckSession(ctx *gin.Context) {
 	var sessionID = ctx.Request.Header.Get("sessionID")
 
@@ -159,6 +167,7 @@ func (auth *Auth) getSession(id string) (*Session, error) {
 	return nil, ErrInvalidSession
 }
 
+//GetLoginInfoFromCtx : Utility function for other controllers to get the LoginInfo from their Context
 func GetLoginInfoFromCtx(ctx *gin.Context) (*LoginInfo, error) {
 	var info *LoginInfo
 
