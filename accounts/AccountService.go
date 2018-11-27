@@ -19,7 +19,10 @@ type AccountService struct {
 var collectionName = "accounts"
 var collectionNameTrans = "transactions"
 
-//NewAccountService creates a AccountService and initialzes the Data
+var ErrNotOwnerOfObject = errors.New("This User is not an owner of this account")
+var ErrIDAlreadyTaken = errors.New("AccountID already taken")
+
+//NewAccountService creates a AccountService and initializes the Data
 func NewAccountService(path string, perms *permissions.Permissions) (*AccountService, error) {
 	acs := &AccountService{}
 	var err error
@@ -31,8 +34,7 @@ func NewAccountService(path string, perms *permissions.Permissions) (*AccountSer
 	return acs, nil
 }
 
-var ErrIDAlreadyTaken = errors.New("AccountID already taken")
-
+//Adds a new Account and sets the permissions
 func (service *AccountService) Add(new *Account, userID string, perm permissions.PermissionType, perms ...permissions.PermissionType) error {
 	service.perms.SetPermission(new.ID, userID, perm, true)
 	for _, perm := range perms {
@@ -46,6 +48,7 @@ func (service *AccountService) Add(new *Account, userID string, perm permissions
 	return nil
 }
 
+//Creates a new Account and adds it to the repo
 func (service *AccountService) CreateAdd(name, userID string, perm permissions.PermissionType, perms ...permissions.PermissionType) (*Account, error) {
 	acc := &Account{}
 	acc.ID = strconv.FormatInt(time.Now().UnixNano(), 10)
@@ -76,7 +79,7 @@ func (service *AccountService) addMainAccount(userID string) (*Account, error) {
 	return service.CreateAdd("bank", userID, permissions.Read, permissions.Update)
 }
 
-//GetAccounts returns all accounts that are part of this group
+//GetAccounts returns all accounts the user is allowed to read
 func (service *AccountService) GetAccounts(userID string) ([]*Account, error) {
 	list, err := service.accRepo.ReadAll(collectionName)
 	if err != nil {
@@ -96,6 +99,7 @@ func (service *AccountService) GetAccounts(userID string) ([]*Account, error) {
 		}
 	}
 
+	//check for a main account for this user, if not there add it.
 	if !service.containsMainAccount(res) {
 		acc, err := service.addMainAccount(userID)
 		if err != nil {
@@ -107,7 +111,7 @@ func (service *AccountService) GetAccounts(userID string) ([]*Account, error) {
 	return res, nil
 }
 
-//GetAccount returns the account indentified by accounts/:id
+//GetAccount returns the account if the user has permission to read it
 func (service *AccountService) GetAccount(accID, userID string) (*Account, error) {
 	ok, err := service.perms.CheckPermissionAny(accID, userID, permissions.CRUD, permissions.Read)
 	if err != nil {
@@ -126,7 +130,7 @@ func (service *AccountService) GetAccount(accID, userID string) (*Account, error
 	return acc, nil
 }
 
-//UpdateAccount updates the account with the difference and returns the new account
+//UpdateAccount updates the account with the difference and returns the account with the new values
 func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*Account, error) {
 	ok, err := service.perms.CheckPermissionAny(accID, userID, permissions.CRUD, permissions.Update)
 	if err != nil {
@@ -147,7 +151,7 @@ func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*
 	return acc, nil
 }
 
-//UpdateAccount updates the account with the difference and returns the new account
+//Transaction updates the accounts if the user has Update permsissions on both accounts and saves the transaction
 func (service *AccountService) Transaction(SourceID, TargetID, userID string, amount int) error {
 	if SourceID != "0" { //0 is reserved for infusions from outside the system
 		ok, err := service.perms.CheckPermissionAny(SourceID, userID, permissions.CRUD, permissions.Update)
@@ -198,6 +202,7 @@ func (service *AccountService) Transaction(SourceID, TargetID, userID string, am
 	return nil
 }
 
+//GetTransactions gets all transactions concerning this account (or all the user has access to if accID == "")
 func (service *AccountService) GetTransactions(accID, userID string) ([]*Transaction, error) {
 	list, err := service.accRepo.ReadAll(collectionNameTrans)
 	if err != nil {
@@ -222,8 +227,7 @@ func (service *AccountService) GetTransactions(accID, userID string) ([]*Transac
 	return res, nil
 }
 
-var ErrNotOwnerOfObject = errors.New("This User is not an owner of this account")
-
+//GivePermissionToUser lets the newOwner access this account
 func (service *AccountService) GivePermissionToUser(accID, ownerID, newOwnerID string, perm permissions.PermissionType) error {
 	ok, err := service.perms.CheckPermissionAny(accID, ownerID, permissions.CRUD, permissions.Read)
 	if err != nil {
@@ -236,7 +240,7 @@ func (service *AccountService) GivePermissionToUser(accID, ownerID, newOwnerID s
 	return service.perms.SetPermission(accID, newOwnerID, perm, true)
 }
 
-//UpdateAccount updates the account with the difference and returns the new account
+//DeleteAccount deletes the account if the user has Delete permissions
 func (service *AccountService) DeleteAccount(accID, userID string) error {
 	ok, err := service.perms.CheckPermissionAny(accID, userID, permissions.Delete, permissions.CRUD)
 	if err != nil {

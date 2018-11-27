@@ -13,6 +13,7 @@ type AccountOwner struct {
 	Name string `json:"Name"`
 }
 
+//Transaction : represents a transaction made between two Accounts (or from/to the outer world)
 type Transaction struct {
 	SourceID  string
 	TargetID  string

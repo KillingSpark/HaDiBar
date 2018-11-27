@@ -158,3 +158,17 @@ func (auth *Auth) getSession(id string) (*Session, error) {
 	}
 	return nil, ErrInvalidSession
 }
+
+func GetLoginInfoFromCtx(ctx *gin.Context) (*LoginInfo, error) {
+	var info *LoginInfo
+
+	if inter, ok := ctx.Get("logininfo"); !ok {
+		info, ok = inter.(*LoginInfo)
+		if !ok {
+			return nil, errors.New("Not a LoginInfo while expecting LoginInfo. This is an internal misbehaviour. Contact an admin about this")
+		}
+	} else {
+		return nil, errors.New("No Login-Info found. Try to log in again")
+	}
+	return info, nil
+}
