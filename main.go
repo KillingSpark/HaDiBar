@@ -1,11 +1,8 @@
 package main
 
 import (
-	"net/http"
-
 	"log"
-
-	"strconv"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/hadibar/accounts"
@@ -93,6 +90,7 @@ func startServer() {
 	if err != nil {
 		panic(err.Error())
 	}
+
 	lc := authStuff.NewLoginController(auth)
 
 	rc, err := reports.NewReportsController(perms, viper.GetString("DataDir"))
@@ -111,5 +109,5 @@ func startServer() {
 	makeReportRoutes(floorSpecificGroup, rc)
 	makeLoginRoutes(apiGroup, lc)
 
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(viper.GetInt("Port")), router))
+	log.Fatal(http.ListenAndServe(":"+viper.GetString("Port"), router))
 }

@@ -1,5 +1,5 @@
 {
-    "Port":"9080",
+    "Port":"8080",
     "DataDir":"data",
     "WebAppDir":"webapp/",
     "WebAppRoute":"/app",

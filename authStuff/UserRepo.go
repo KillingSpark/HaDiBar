@@ -2,58 +2,93 @@ package authStuff
 
 import (
 	"encoding/json"
-	scribble "github.com/nanobox-io/golang-scribble"
+	"errors"
+	"github.com/boltdb/bolt"
+	"path"
 )
 
+var globdb *bolt.DB
+
 type UserRepo struct {
-	db *scribble.Driver
+	db *bolt.DB
 }
 
-var collectionName = "users"
+var collectionName = "Users"
 
-func NewUserRepo(path string) (*UserRepo, error) {
+func NewUserRepo(dir string) (*UserRepo, error) {
 	ar := &UserRepo{}
 	var err error
-	ar.db, err = scribble.New(path, nil)
-	if err != nil {
-		return nil, err
+
+	if globdb == nil {
+		globdb, err = bolt.Open(path.Join(dir, collectionName+".bolt"), 0600, nil)
+		if err != nil {
+			return nil, err
+		}
+		globdb.Update(func(tx *bolt.Tx) error {
+			tx.CreateBucket([]byte(collectionName))
+			return nil
+		})
 	}
+	ar.db = globdb
 	return ar, nil
 }
 
 func (ar *UserRepo) GetAllUsers() ([]*LoginInfo, error) {
-	list, err := ar.db.ReadAll(collectionName)
+	var res []*LoginInfo
+	err := ar.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			info := &LoginInfo{}
+			err := json.Unmarshal([]byte(v), info)
+			if err != nil {
+				continue //skip invalied entries. maybe implement cleanup...
+			}
+			res = append(res, info)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	var res []*LoginInfo
-	for _, item := range list {
-		usr := &LoginInfo{}
-		err := json.Unmarshal([]byte(item), usr)
-		if err != nil {
-			continue //skip invalied entries. maybe implement cleanup...
-		}
-		res = append(res, usr)
 	}
 	return res, nil
 }
 
-func (ar *UserRepo) SaveInstance(usr *LoginInfo) error {
-	if err := ar.db.Write(collectionName, usr.Name, usr); err != nil {
-		return err
-	}
-	return nil
+func (ar *UserRepo) SaveInstance(info *LoginInfo) error {
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		marshed, err := json.Marshal(info)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(info.Name), marshed)
+	})
+	return err
 }
 
-func (ar *UserRepo) GetInstance(usrID string) (*LoginInfo, error) {
-	var usr LoginInfo
-	if err := ar.db.Read(collectionName, usrID, &usr); err != nil {
+var ErrUserDoesNotExist = errors.New("User with this Name does not exist")
+
+func (ar *UserRepo) GetInstance(infoName string) (*LoginInfo, error) {
+	var info LoginInfo
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		marshed := b.Get([]byte(infoName))
+		if marshed == nil {
+			return ErrUserDoesNotExist
+		}
+		return json.Unmarshal(marshed, &info)
+	})
+	if err != nil {
 		return nil, err
 	}
-	return &usr, nil
+	return &info, nil
 }
 
-func (ar *UserRepo) DeleteInstance(usrID string) error {
-	return ar.db.Delete(collectionName, usrID)
+func (ar *UserRepo) DeleteInstance(infoName string) error {
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		b.Delete([]byte(infoName))
+		return nil
+	})
+	return err
 }

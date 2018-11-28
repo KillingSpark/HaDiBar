@@ -2,81 +2,128 @@ package accounts
 
 import (
 	"encoding/json"
-	scribble "github.com/nanobox-io/golang-scribble"
+	"errors"
+	"github.com/boltdb/bolt"
+	"path"
 )
 
+var globdb *bolt.DB
+
 type AccountRepo struct {
-	db *scribble.Driver
+	db *bolt.DB
 }
 
-var collectionName = "accounts"
-var collectionNameTrans = "transactions"
+var collectionName = "Accounts"
+var collectionNameTrans = "Transactions"
 
-func NewAccountRepo(path string) (*AccountRepo, error) {
+func NewAccountRepo(dir string) (*AccountRepo, error) {
 	ar := &AccountRepo{}
 	var err error
-	ar.db, err = scribble.New(path, nil)
-	if err != nil {
-		return nil, err
+
+	if globdb == nil {
+		globdb, err = bolt.Open(path.Join(dir, collectionName+".bolt"), 0600, nil)
+		if err != nil {
+			return nil, err
+		}
+		globdb.Update(func(tx *bolt.Tx) error {
+			tx.CreateBucket([]byte(collectionName))
+			tx.CreateBucket([]byte(collectionNameTrans))
+			return nil
+		})
 	}
+	ar.db = globdb
 	return ar, nil
 }
 
 func (ar *AccountRepo) GetAllAccounts() ([]*Account, error) {
-	list, err := ar.db.ReadAll(collectionName)
+	var res []*Account
+	err := ar.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			acc := &Account{}
+			err := json.Unmarshal([]byte(v), acc)
+			if err != nil {
+				continue //skip invalied entries. maybe implement cleanup...
+			}
+			res = append(res, acc)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	var res []*Account
-	for _, item := range list {
-		acc := &Account{}
-		err := json.Unmarshal([]byte(item), acc)
-		if err != nil {
-			continue //skip invalied entries. maybe implement cleanup...
-		}
-		res = append(res, acc)
 	}
 	return res, nil
 }
 
 func (ar *AccountRepo) SaveInstance(acc *Account) error {
-	if err := ar.db.Write(collectionName, acc.ID, acc); err != nil {
-		return err
-	}
-	return nil
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		marshed, err := json.Marshal(acc)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(acc.ID), marshed)
+	})
+	return err
 }
+
+var ErrAccountDoesNotExist = errors.New("Account with this id does not exist")
 
 func (ar *AccountRepo) GetInstance(accID string) (*Account, error) {
 	var acc Account
-	if err := ar.db.Read(collectionName, accID, &acc); err != nil {
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		marshed := b.Get([]byte(accID))
+		if marshed == nil {
+			return ErrAccountDoesNotExist
+		}
+		return json.Unmarshal(marshed, &acc)
+	})
+	if err != nil {
 		return nil, err
 	}
 	return &acc, nil
 }
 
 func (ar *AccountRepo) DeleteInstance(accID string) error {
-	return ar.db.Delete(collectionName, accID)
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		b.Delete([]byte(accID))
+		return nil
+	})
+	return err
 }
 
-func (ar *AccountRepo) SaveTransaction(tx *Transaction) error {
-	return ar.db.Write(collectionNameTrans, tx.ID, tx)
+func (ar *AccountRepo) SaveTransaction(trans *Transaction) error {
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionNameTrans))
+		marshed, err := json.Marshal(trans)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(trans.ID), marshed)
+	})
+	return err
 }
 
 func (ar *AccountRepo) GetTransactions() ([]*Transaction, error) {
-	list, err := ar.db.ReadAll(collectionNameTrans)
+	var res []*Transaction
+	err := ar.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionNameTrans))
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			trans := &Transaction{}
+			err := json.Unmarshal([]byte(v), trans)
+			if err != nil {
+				continue //skip invalied entries. maybe implement cleanup...
+			}
+			res = append(res, trans)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	var res []*Transaction
-	for _, item := range list {
-		acc := &Transaction{}
-		err := json.Unmarshal([]byte(item), acc)
-		if err != nil {
-			continue //skip invalied entries. maybe implement cleanup...
-		}
-		res = append(res, acc)
 	}
 	return res, nil
 }

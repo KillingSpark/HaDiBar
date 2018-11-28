@@ -2,58 +2,93 @@ package beverages
 
 import (
 	"encoding/json"
-	scribble "github.com/nanobox-io/golang-scribble"
+	"errors"
+	"github.com/boltdb/bolt"
+	"path"
 )
 
+var globdb *bolt.DB
+
 type BeverageRepo struct {
-	db *scribble.Driver
+	db *bolt.DB
 }
 
 var collectionName = "beverages"
 
-func NewBeverageRepo(path string) (*BeverageRepo, error) {
+func NewBeverageRepo(dir string) (*BeverageRepo, error) {
 	ar := &BeverageRepo{}
 	var err error
-	ar.db, err = scribble.New(path, nil)
-	if err != nil {
-		return nil, err
+
+	if globdb == nil {
+		globdb, err = bolt.Open(path.Join(dir, collectionName+".bolt"), 0600, nil)
+		if err != nil {
+			return nil, err
+		}
+		globdb.Update(func(tx *bolt.Tx) error {
+			tx.CreateBucket([]byte(collectionName))
+			return nil
+		})
 	}
+	ar.db = globdb
 	return ar, nil
 }
 
 func (ar *BeverageRepo) GetAllBeverages() ([]*Beverage, error) {
-	list, err := ar.db.ReadAll(collectionName)
+	var res []*Beverage
+	err := ar.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			bev := &Beverage{}
+			err := json.Unmarshal([]byte(v), bev)
+			if err != nil {
+				continue //skip invalied entries. maybe implement cleanup...
+			}
+			res = append(res, bev)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	var res []*Beverage
-	for _, item := range list {
-		bev := &Beverage{}
-		err := json.Unmarshal([]byte(item), bev)
-		if err != nil {
-			continue //skip invalied entries. maybe implement cleanup...
-		}
-		res = append(res, bev)
 	}
 	return res, nil
 }
 
 func (ar *BeverageRepo) SaveInstance(bev *Beverage) error {
-	if err := ar.db.Write(collectionName, bev.ID, bev); err != nil {
-		return err
-	}
-	return nil
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		marshed, err := json.Marshal(bev)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(bev.ID), marshed)
+	})
+	return err
 }
+
+var ErrBeverageDoesNotExist = errors.New("Beverage with this id does not exist")
 
 func (ar *BeverageRepo) GetInstance(bevID string) (*Beverage, error) {
 	var bev Beverage
-	if err := ar.db.Read(collectionName, bevID, &bev); err != nil {
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		marshed := b.Get([]byte(bevID))
+		if marshed == nil {
+			return ErrBeverageDoesNotExist
+		}
+		return json.Unmarshal(marshed, &bev)
+	})
+	if err != nil {
 		return nil, err
 	}
 	return &bev, nil
 }
 
 func (ar *BeverageRepo) DeleteInstance(bevID string) error {
-	return ar.db.Delete(collectionName, bevID)
+	err := ar.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(collectionName))
+		b.Delete([]byte(bevID))
+		return nil
+	})
+	return err
 }
