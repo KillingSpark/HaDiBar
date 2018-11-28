@@ -35,10 +35,7 @@ var ErrUserNotKnown = errors.New("User not in database")
 var ErrWrongCredetials = errors.New("Wrong creds for username")
 
 func (ls *LoginService) Add(new *LoginInfo) error {
-	user, err := ls.userRepo.GetInstance(new.Name)
-	if err != nil {
-		return err
-	}
+	user, _ := ls.userRepo.GetInstance(new.Name)
 	if user != nil && user.Name == new.Name {
 		return ErrUsernameTaken
 	}
@@ -59,9 +56,6 @@ func createNewUser(hasher hash.Hash, username, passwd string) *LoginInfo {
 func (ls *LoginService) isValid(userName, passwd string) (*LoginInfo, error) {
 	var user *LoginInfo
 	user, err := ls.userRepo.GetInstance(userName)
-	if err != nil {
-		return nil, err
-	}
 	if user == nil {
 		//add unknown user as a new user
 		user = createNewUser(ls.hasher, userName, passwd)
