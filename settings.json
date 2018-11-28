@@ -1,7 +1,7 @@
 {
-    "port":8080,
-    "datadir":"data",
-    "webapppath":"webapp",
-    "webapproute":"/app",
-    "logginglevel":"DEBUG"
+    "Port":"9080",
+    "DataDir":"data",
+    "WebAppDir":"webapp/",
+    "WebAppRoute":"/app",
+    "LoggingLevel":"DEBUG"
 }

@@ -18,13 +18,14 @@ func NewLoginController(auth *Auth) *LoginController {
 	return &LoginController{auth: auth}
 }
 
+//NewSession creates a new session id and writes it to as an answer
 func (controller *LoginController) NewSession(ctx *gin.Context) {
 	id := controller.auth.AddNewSession()
 	fmt.Fprint(ctx.Writer, id)
 	ctx.Next()
 }
 
-//Login returns a new token if the credentials (in the formvalues) "name" and "password" are valid
+//Login checks whether "name" and "password" are valid and updates the logininfo if so
 func (controller *LoginController) Login(ctx *gin.Context) {
 	name := ctx.PostForm("name")
 	password := ctx.PostForm("password")
@@ -45,7 +46,7 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 	ctx.Next()
 }
 
-//LogOut uncouples the usersession from a token
+//LogOut uncouples the session from the logininfo
 func (controller *LoginController) LogOut(ctx *gin.Context) {
 	sessionID := ctx.Request.Header.Get("sessionID")
 	controller.auth.LogOut(sessionID)

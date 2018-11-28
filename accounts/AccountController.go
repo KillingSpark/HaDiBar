@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/hadibar/authStuff"
 	"github.com/killingspark/hadibar/restapi"
-	"github.com/killingspark/hadibar/settings"
 )
 
 //AccountController is the controller for accounts
@@ -19,46 +18,40 @@ type AccountController struct {
 }
 
 //NewAccountController creates a new AccountController and initializes the service
-func NewAccountController(perms *permissions.Permissions) (*AccountController, error) {
+func NewAccountController(perms *permissions.Permissions, datadir string) (*AccountController, error) {
 	acC := &AccountController{}
 	var err error
-	acC.service, err = NewAccountService(settings.S.DataDir, perms)
+	acC.service, err = NewAccountService(datadir, perms)
 	if err != nil {
 		return nil, err
 	}
 	return acC, nil
 }
 
-//GetAccounts gets all existing accounts
+//GetAccounts gets all existing accounts, that the logged in account is allowed to see
 func (controller *AccountController) GetAccounts(ctx *gin.Context) {
-	if inter, ok := ctx.Get("logininfo"); ok {
-		info, ok := inter.(*authStuff.LoginInfo)
-		if ok {
-			accs, err := controller.service.GetAccounts(info.Name)
-			if err != nil {
-				response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
-				fmt.Fprint(ctx.Writer, string(response))
-				ctx.Abort()
-				return
-			}
-			response, _ := restapi.NewOkResponse(accs).Marshal()
-			fmt.Fprint(ctx.Writer, string(response))
-			ctx.Next()
-		} else {
-			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
-			fmt.Fprint(ctx.Writer, string(response))
-			ctx.Abort()
-			return
-		}
-	} else {
-		response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
+	info, err := authStuff.GetLoginInfoFromCtx(ctx)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return
 	}
+
+	accs, err := controller.service.GetAccounts(info.Name)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse("Could not get accounts because: " + err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+	response, _ := restapi.NewOkResponse(accs).Marshal()
+	fmt.Fprint(ctx.Writer, string(response))
+	ctx.Next()
+
 }
 
-//GetAccount returns the account identified by account/:id
+//GetAccount returns the account identified by the ID in the query
 func (controller *AccountController) GetAccount(ctx *gin.Context) {
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
@@ -68,15 +61,12 @@ func (controller *AccountController) GetAccount(ctx *gin.Context) {
 		return
 	}
 
-	var info *authStuff.LoginInfo
-	if inter, ok := ctx.Get("logininfo"); ok {
-		info, ok = inter.(*authStuff.LoginInfo)
-		if !ok {
-			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
-			fmt.Fprint(ctx.Writer, string(response))
-			ctx.Abort()
-			return
-		}
+	info, err := authStuff.GetLoginInfoFromCtx(ctx)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
 	}
 
 	acc, err := controller.service.GetAccount(ID, info.Name)
@@ -92,7 +82,7 @@ func (controller *AccountController) GetAccount(ctx *gin.Context) {
 	ctx.Next()
 }
 
-//UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
+//UpdateAccount updates the the account identified by the ID int the query
 func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
@@ -110,15 +100,12 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 		return
 	}
 
-	var info *authStuff.LoginInfo
-	if inter, ok := ctx.Get("logininfo"); ok {
-		info, ok = inter.(*authStuff.LoginInfo)
-		if !ok {
-			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
-			fmt.Fprint(ctx.Writer, string(response))
-			ctx.Abort()
-			return
-		}
+	info, err := authStuff.GetLoginInfoFromCtx(ctx)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
 	}
 
 	acc, err := controller.service.UpdateAccount(ID, info.Name, value)
@@ -133,7 +120,7 @@ func (controller *AccountController) UpdateAccount(ctx *gin.Context) {
 	ctx.Next()
 }
 
-//UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
+//GivePermissionToUser allows an other user to see/alter this account
 func (controller *AccountController) GivePermissionToUser(ctx *gin.Context) {
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
@@ -145,18 +132,15 @@ func (controller *AccountController) GivePermissionToUser(ctx *gin.Context) {
 
 	newgroupid := ctx.PostForm("newgroupid")
 
-	var info *authStuff.LoginInfo
-	if inter, ok := ctx.Get("logininfo"); ok {
-		info, ok = inter.(*authStuff.LoginInfo)
-		if !ok {
-			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
-			fmt.Fprint(ctx.Writer, string(response))
-			ctx.Abort()
-			return
-		}
+	info, err := authStuff.GetLoginInfoFromCtx(ctx)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
 	}
 
-	err := controller.service.GivePermissionToUser(ID, info.Name, newgroupid, permissions.CRUD)
+	err = controller.service.GivePermissionToUser(ID, info.Name, newgroupid, permissions.CRUD)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
@@ -168,7 +152,7 @@ func (controller *AccountController) GivePermissionToUser(ctx *gin.Context) {
 	ctx.Next()
 }
 
-//UpdateAccount updates the value of the account identified by accounts/:id with the form-value "value" as diffenrence
+//NewAccount creates a new account and chooses a new ID
 func (controller *AccountController) NewAccount(ctx *gin.Context) {
 	name, ok := ctx.GetPostForm("name")
 	if !ok {
@@ -178,15 +162,12 @@ func (controller *AccountController) NewAccount(ctx *gin.Context) {
 		return
 	}
 
-	var info *authStuff.LoginInfo
-	if inter, ok := ctx.Get("logininfo"); ok {
-		info, ok = inter.(*authStuff.LoginInfo)
-		if !ok {
-			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
-			fmt.Fprint(ctx.Writer, string(response))
-			ctx.Abort()
-			return
-		}
+	info, err := authStuff.GetLoginInfoFromCtx(ctx)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
 	}
 
 	acc, err := controller.service.CreateAdd(name, info.Name, permissions.CRUD)
@@ -201,6 +182,7 @@ func (controller *AccountController) NewAccount(ctx *gin.Context) {
 	ctx.Next()
 }
 
+//DeleteAccount deletes the account identified by the ID in the query
 func (controller *AccountController) DeleteAccount(ctx *gin.Context) {
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
@@ -210,15 +192,12 @@ func (controller *AccountController) DeleteAccount(ctx *gin.Context) {
 		return
 	}
 
-	var info *authStuff.LoginInfo
-	if inter, ok := ctx.Get("logininfo"); ok {
-		info, ok = inter.(*authStuff.LoginInfo)
-		if !ok {
-			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
-			fmt.Fprint(ctx.Writer, string(response))
-			ctx.Abort()
-			return
-		}
+	info, err := authStuff.GetLoginInfoFromCtx(ctx)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
 	}
 
 	if err := controller.service.DeleteAccount(ID, info.Name); err == nil {
@@ -233,6 +212,7 @@ func (controller *AccountController) DeleteAccount(ctx *gin.Context) {
 	}
 }
 
+//DoTransaction executes a transaction between the accounts identified by their IDs in the query
 func (controller *AccountController) DoTransaction(ctx *gin.Context) {
 	sourceID, ok := ctx.GetPostForm("sourceid")
 	if !ok {
@@ -241,6 +221,7 @@ func (controller *AccountController) DoTransaction(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+
 	targetID, ok := ctx.GetPostForm("targetid")
 	if !ok {
 		errResp, _ := restapi.NewErrorResponse("No targetID given").Marshal()
@@ -249,20 +230,17 @@ func (controller *AccountController) DoTransaction(ctx *gin.Context) {
 		return
 	}
 
-	var info *authStuff.LoginInfo
-	if inter, ok := ctx.Get("logininfo"); ok {
-		info, ok = inter.(*authStuff.LoginInfo)
-		if !ok {
-			response, _ := restapi.NewErrorResponse("Something went wrong while processing the username").Marshal()
-			fmt.Fprint(ctx.Writer, string(response))
-			ctx.Abort()
-			return
-		}
-	}
-
 	amount, err := strconv.Atoi(ctx.PostForm("amount"))
 	if err != nil {
 		response, _ := restapi.NewErrorResponse("No valid diff value").Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+
+	info, err := authStuff.GetLoginInfoFromCtx(ctx)
+	if err != nil {
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return
