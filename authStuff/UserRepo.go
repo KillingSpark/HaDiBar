@@ -13,19 +13,19 @@ type UserRepo struct {
 	db *bolt.DB
 }
 
-var collectionName = "Users"
+var bucketName = "users"
 
 func NewUserRepo(dir string) (*UserRepo, error) {
 	ar := &UserRepo{}
 	var err error
 
 	if globdb == nil {
-		globdb, err = bolt.Open(path.Join(dir, collectionName+".bolt"), 0600, nil)
+		globdb, err = bolt.Open(path.Join(dir, bucketName+".bolt"), 0600, nil)
 		if err != nil {
 			return nil, err
 		}
 		globdb.Update(func(tx *bolt.Tx) error {
-			tx.CreateBucket([]byte(collectionName))
+			tx.CreateBucket([]byte(bucketName))
 			return nil
 		})
 	}
@@ -36,7 +36,7 @@ func NewUserRepo(dir string) (*UserRepo, error) {
 func (ar *UserRepo) GetAllUsers() ([]*LoginInfo, error) {
 	var res []*LoginInfo
 	err := ar.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			info := &LoginInfo{}
@@ -56,7 +56,7 @@ func (ar *UserRepo) GetAllUsers() ([]*LoginInfo, error) {
 
 func (ar *UserRepo) SaveInstance(info *LoginInfo) error {
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		marshed, err := json.Marshal(info)
 		if err != nil {
 			return err
@@ -71,7 +71,7 @@ var ErrUserDoesNotExist = errors.New("User with this Name does not exist")
 func (ar *UserRepo) GetInstance(infoName string) (*LoginInfo, error) {
 	var info LoginInfo
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		marshed := b.Get([]byte(infoName))
 		if marshed == nil {
 			return ErrUserDoesNotExist
@@ -86,7 +86,7 @@ func (ar *UserRepo) GetInstance(infoName string) (*LoginInfo, error) {
 
 func (ar *UserRepo) DeleteInstance(infoName string) error {
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		b.Delete([]byte(infoName))
 		return nil
 	})

@@ -2,9 +2,9 @@ package permissions
 
 import (
 	"errors"
-	"os"
+	"path"
 
-	"github.com/nanobox-io/golang-scribble"
+	"github.com/boltdb/bolt"
 )
 
 type ObjectID string
@@ -31,81 +31,89 @@ var (
 type Permissions struct {
 	//maps from objectID,userID to the permissiontypes given
 	permmap           map[ObjectID](map[UserID](map[PermissionType]bool))
-	permRepo          *scribble.Driver
+	db                *bolt.DB
 	defaultPermission bool
 }
 
-func NewPermissions(path string) (*Permissions, error) {
+var globdb *bolt.DB
+
+func NewPermissions(dir string) (*Permissions, error) {
 	perm := &Permissions{}
 	var err error
-	perm.permRepo, err = scribble.New(path, nil)
-	if err != nil {
-		return nil, err
+	if globdb == nil {
+		globdb, err = bolt.Open(path.Join(dir, "permissions.bolt"), 0600, nil)
+		if err != nil {
+			return nil, err
+		}
 	}
-	err = perm.permRepo.Read("permissions", "permissions", &perm.permmap)
-	if err != nil && !os.IsNotExist(err) {
-		return nil, err
-	}
-	if perm.permmap == nil {
-		perm.permmap = make(map[ObjectID](map[UserID](map[PermissionType]bool)))
-	}
+	perm.db = globdb
 	return perm, nil
 }
 
 func (p *Permissions) SetPermission(objID, usrID string, permission PermissionType, value bool) error {
-	o, ok := p.permmap[ObjectID(objID)]
-	if !ok {
-		p.permmap[ObjectID(objID)] = make(map[UserID](map[PermissionType]bool))
-		o = p.permmap[ObjectID(objID)]
-	}
-	u, ok := o[UserID(usrID)]
-	if !ok {
-		o[UserID(usrID)] = make(map[PermissionType]bool)
-		u = o[UserID(usrID)]
-	}
-	u[permission] = value
-	err := p.permRepo.Write(collection, resource, p.permmap)
+	err := p.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(usrID))
+		if err != nil {
+			return err
+		}
+		o, err := b.CreateBucketIfNotExists([]byte(objID))
+		if err != nil {
+			return err
+		}
+		if value {
+			err = o.Put([]byte{byte(permission)}, []byte{byte(1)})
+		} else {
+			err = o.Put([]byte{byte(permission)}, []byte{byte(0)})
+		}
+		return err
+	})
 	return err
 }
 
 func (p *Permissions) DeletePermission(objID, usrID string, permission PermissionType) error {
-	o, ok := p.permmap[ObjectID(objID)]
-	if !ok {
-		return ErrObjectIDNotKnow
-	}
-	u, ok := o[UserID(usrID)]
-	if !ok {
-		return ErrUserIDNotKnow
-	}
-	delete(u, permission)
-	err := p.permRepo.Write(collection, resource, p.permmap)
+	err := p.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(usrID))
+		if err != nil {
+			return err
+		}
+		o, err := b.CreateBucketIfNotExists([]byte(objID))
+		if err != nil {
+			return err
+		}
+		err = o.Delete([]byte{byte(permission)})
+		return err
+	})
 	return err
 }
 
 func (p *Permissions) CheckPermissionAny(objID, usrID string, permissions ...PermissionType) (bool, error) {
-	for _, permission := range permissions {
-		o, ok := p.permmap[ObjectID(objID)]
-		if ok {
-			u, ok := o[UserID(usrID)]
-			if ok {
-				prm, ok := u[permission]
-				if ok {
-					if prm {
-						return true, nil
-					}
-				} else {
-					if p.defaultPermission {
-						return true, nil
-					} else {
-						continue
-					}
-				}
-			} else {
-				return p.defaultPermission, ErrUserIDNotKnow
-			}
-		} else {
-			return p.defaultPermission, ErrObjectIDNotKnow
+	result := false
+	err := p.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(usrID))
+		if err != nil {
+			return err
 		}
-	}
-	return false, nil
+		o, err := b.CreateBucketIfNotExists([]byte(objID))
+		if err != nil {
+			return err
+		}
+
+		for _, permission := range permissions {
+			val := o.Get([]byte{byte(permission)})
+			if len(val) < 1 {
+				continue
+			}
+			if val[0] != 0 {
+				result = true
+				return nil
+			}
+			if val[0] == 0 {
+				result = false
+				return nil
+			}
+		}
+		result = p.defaultPermission
+		return err
+	})
+	return result, err
 }

@@ -13,21 +13,21 @@ type AccountRepo struct {
 	db *bolt.DB
 }
 
-var collectionName = "Accounts"
-var collectionNameTrans = "Transactions"
+var bucketName = "accounts"
+var bucketNameTrans = "transactions"
 
 func NewAccountRepo(dir string) (*AccountRepo, error) {
 	ar := &AccountRepo{}
 	var err error
 
 	if globdb == nil {
-		globdb, err = bolt.Open(path.Join(dir, collectionName+".bolt"), 0600, nil)
+		globdb, err = bolt.Open(path.Join(dir, bucketName+".bolt"), 0600, nil)
 		if err != nil {
 			return nil, err
 		}
 		globdb.Update(func(tx *bolt.Tx) error {
-			tx.CreateBucket([]byte(collectionName))
-			tx.CreateBucket([]byte(collectionNameTrans))
+			tx.CreateBucket([]byte(bucketName))
+			tx.CreateBucket([]byte(bucketNameTrans))
 			return nil
 		})
 	}
@@ -38,7 +38,7 @@ func NewAccountRepo(dir string) (*AccountRepo, error) {
 func (ar *AccountRepo) GetAllAccounts() ([]*Account, error) {
 	var res []*Account
 	err := ar.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			acc := &Account{}
@@ -58,7 +58,7 @@ func (ar *AccountRepo) GetAllAccounts() ([]*Account, error) {
 
 func (ar *AccountRepo) SaveInstance(acc *Account) error {
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		marshed, err := json.Marshal(acc)
 		if err != nil {
 			return err
@@ -73,7 +73,7 @@ var ErrAccountDoesNotExist = errors.New("Account with this id does not exist")
 func (ar *AccountRepo) GetInstance(accID string) (*Account, error) {
 	var acc Account
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		marshed := b.Get([]byte(accID))
 		if marshed == nil {
 			return ErrAccountDoesNotExist
@@ -88,7 +88,7 @@ func (ar *AccountRepo) GetInstance(accID string) (*Account, error) {
 
 func (ar *AccountRepo) DeleteInstance(accID string) error {
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		b.Delete([]byte(accID))
 		return nil
 	})
@@ -97,7 +97,7 @@ func (ar *AccountRepo) DeleteInstance(accID string) error {
 
 func (ar *AccountRepo) SaveTransaction(trans *Transaction) error {
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionNameTrans))
+		b := tx.Bucket([]byte(bucketNameTrans))
 		marshed, err := json.Marshal(trans)
 		if err != nil {
 			return err
@@ -110,7 +110,7 @@ func (ar *AccountRepo) SaveTransaction(trans *Transaction) error {
 func (ar *AccountRepo) GetTransactions() ([]*Transaction, error) {
 	var res []*Transaction
 	err := ar.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionNameTrans))
+		b := tx.Bucket([]byte(bucketNameTrans))
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			trans := &Transaction{}

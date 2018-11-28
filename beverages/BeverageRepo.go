@@ -13,19 +13,19 @@ type BeverageRepo struct {
 	db *bolt.DB
 }
 
-var collectionName = "beverages"
+var bucketName = "beverages"
 
 func NewBeverageRepo(dir string) (*BeverageRepo, error) {
 	ar := &BeverageRepo{}
 	var err error
 
 	if globdb == nil {
-		globdb, err = bolt.Open(path.Join(dir, collectionName+".bolt"), 0600, nil)
+		globdb, err = bolt.Open(path.Join(dir, bucketName+".bolt"), 0600, nil)
 		if err != nil {
 			return nil, err
 		}
 		globdb.Update(func(tx *bolt.Tx) error {
-			tx.CreateBucket([]byte(collectionName))
+			tx.CreateBucket([]byte(bucketName))
 			return nil
 		})
 	}
@@ -36,7 +36,7 @@ func NewBeverageRepo(dir string) (*BeverageRepo, error) {
 func (ar *BeverageRepo) GetAllBeverages() ([]*Beverage, error) {
 	var res []*Beverage
 	err := ar.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			bev := &Beverage{}
@@ -56,7 +56,7 @@ func (ar *BeverageRepo) GetAllBeverages() ([]*Beverage, error) {
 
 func (ar *BeverageRepo) SaveInstance(bev *Beverage) error {
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		marshed, err := json.Marshal(bev)
 		if err != nil {
 			return err
@@ -71,7 +71,7 @@ var ErrBeverageDoesNotExist = errors.New("Beverage with this id does not exist")
 func (ar *BeverageRepo) GetInstance(bevID string) (*Beverage, error) {
 	var bev Beverage
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		marshed := b.Get([]byte(bevID))
 		if marshed == nil {
 			return ErrBeverageDoesNotExist
@@ -86,7 +86,7 @@ func (ar *BeverageRepo) GetInstance(bevID string) (*Beverage, error) {
 
 func (ar *BeverageRepo) DeleteInstance(bevID string) error {
 	err := ar.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(collectionName))
+		b := tx.Bucket([]byte(bucketName))
 		b.Delete([]byte(bevID))
 		return nil
 	})
