@@ -1,23 +1,18 @@
 package accounts
 
 import (
-	"encoding/json"
 	"errors"
 	"strconv"
 	"time"
 
 	"github.com/killingspark/hadibar/permissions"
-	scribble "github.com/nanobox-io/golang-scribble"
 )
 
 //AccountService is a service for accessing accounts
 type AccountService struct {
-	accRepo *scribble.Driver
+	accRepo *AccountRepo
 	perms   *permissions.Permissions
 }
-
-var collectionName = "accounts"
-var collectionNameTrans = "transactions"
 
 var ErrNotOwnerOfObject = errors.New("This User is not an owner of this account")
 var ErrIDAlreadyTaken = errors.New("AccountID already taken")
@@ -26,7 +21,7 @@ var ErrIDAlreadyTaken = errors.New("AccountID already taken")
 func NewAccountService(path string, perms *permissions.Permissions) (*AccountService, error) {
 	acs := &AccountService{}
 	var err error
-	acs.accRepo, err = scribble.New(path, nil)
+	acs.accRepo, err = NewAccountRepo(path)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +36,7 @@ func (service *AccountService) Add(new *Account, userID string, perm permissions
 		service.perms.SetPermission(new.ID, userID, perm, true)
 	}
 
-	if err := service.accRepo.Write(collectionName, new.ID, new); err != nil {
+	if err := service.accRepo.SaveInstance(new); err != nil {
 		return err
 	}
 
@@ -81,18 +76,13 @@ func (service *AccountService) addMainAccount(userID string) (*Account, error) {
 
 //GetAccounts returns all accounts the user is allowed to read
 func (service *AccountService) GetAccounts(userID string) ([]*Account, error) {
-	list, err := service.accRepo.ReadAll(collectionName)
+	list, err := service.accRepo.GetAllAccounts()
 	if err != nil {
 		return nil, err
 	}
 
 	var res []*Account
-	for _, item := range list {
-		acc := &Account{}
-		err := json.Unmarshal([]byte(item), acc)
-		if err != nil {
-			continue //skip invalied entries. maybe implement cleanup...
-		}
+	for _, acc := range list {
 		ok, _ := service.perms.CheckPermissionAny(acc.ID, userID, permissions.CRUD, permissions.Read)
 		if ok {
 			res = append(res, acc)
@@ -121,8 +111,7 @@ func (service *AccountService) GetAccount(accID, userID string) (*Account, error
 		return nil, ErrNotOwnerOfObject
 	}
 
-	acc := &Account{}
-	err = service.accRepo.Read(collectionName, accID, acc)
+	acc, err := service.accRepo.GetInstance(accID)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +133,7 @@ func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*
 		return nil, err
 	}
 	acc.Value += aDiff
-	err = service.accRepo.Write(collectionName, accID, acc)
+	err = service.accRepo.SaveInstance(acc)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +155,7 @@ func (service *AccountService) Transaction(SourceID, TargetID, userID string, am
 			return err
 		}
 		source.Value -= amount
-		err = service.accRepo.Write(collectionName, source.ID, source)
+		err = service.accRepo.SaveInstance(source)
 		if err != nil {
 			return err
 		}
@@ -184,7 +173,7 @@ func (service *AccountService) Transaction(SourceID, TargetID, userID string, am
 	}
 
 	target.Value += amount
-	err = service.accRepo.Write(collectionName, target.ID, target)
+	err = service.accRepo.SaveInstance(target)
 	if err != nil {
 		return err
 	}
@@ -194,7 +183,7 @@ func (service *AccountService) Transaction(SourceID, TargetID, userID string, am
 	trans.Timestamp = time.Now()
 	trans.Amount = amount
 	trans.ID = strconv.Itoa(trans.Timestamp.Nanosecond())
-	err = service.accRepo.Write(collectionNameTrans, trans.ID, trans)
+	err = service.accRepo.SaveTransaction(trans)
 	service.perms.SetPermission(trans.ID, userID, permissions.CRUD, true)
 	if err != nil {
 		return err
@@ -204,17 +193,12 @@ func (service *AccountService) Transaction(SourceID, TargetID, userID string, am
 
 //GetTransactions gets all transactions concerning this account (or all the user has access to if accID == "")
 func (service *AccountService) GetTransactions(accID, userID string) ([]*Transaction, error) {
-	list, err := service.accRepo.ReadAll(collectionNameTrans)
+	list, err := service.accRepo.GetTransactions()
 	if err != nil {
 		return nil, err
 	}
 	res := make([]*Transaction, 0)
-	for _, item := range list {
-		tx := &Transaction{}
-		err := json.Unmarshal([]byte(item), tx)
-		if err != nil {
-			continue //skip invalid entries
-		}
+	for _, tx := range list {
 		if ok, err := service.perms.CheckPermissionAny(tx.ID, userID, permissions.Read, permissions.CRUD); ok {
 			if err != nil {
 				return nil, err
@@ -249,7 +233,7 @@ func (service *AccountService) DeleteAccount(accID, userID string) error {
 	if !ok {
 		return ErrNotOwnerOfObject
 	}
-	err = service.accRepo.Delete(collectionName, accID)
+	err = service.accRepo.DeleteInstance(accID)
 	if err != nil {
 		return err
 	}
