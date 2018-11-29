@@ -1,8 +1,10 @@
 package main
 
 import (
+	"github.com/killingspark/hadibar/admin"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/hadibar/accounts"
@@ -97,6 +99,25 @@ func startServer() {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	ur, err := authStuff.NewUserRepo(viper.GetString("DataDir"))
+	if err != nil {
+		panic(err.Error())
+	}
+	br, err := beverages.NewBeverageRepo(viper.GetString("DataDir"))
+	if err != nil {
+		panic(err.Error())
+	}
+	ar, err := accounts.NewAccountRepo(viper.GetString("DataDir"))
+	if err != nil {
+		panic(err.Error())
+	}
+	os.Remove(viper.GetString("SocketPath"))
+	as, err := admin.NewAdminServer(viper.GetString("SocketPath"), ur, ar, br, perms)
+	if err != nil {
+		panic(err.Error())
+	}
+	as.StartAccepting()
 
 	//router.Use(sessMan.CheckSession)
 	apiGroup := router.Group("/api")

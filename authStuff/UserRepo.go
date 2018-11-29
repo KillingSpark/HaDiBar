@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/boltdb/bolt"
+	"os"
 	"path"
 )
 
@@ -16,7 +17,7 @@ type UserRepo struct {
 var bucketName = "users"
 
 func NewUserRepo(dir string) (*UserRepo, error) {
-	ar := &UserRepo{}
+	ur := &UserRepo{}
 	var err error
 
 	if globdb == nil {
@@ -29,13 +30,25 @@ func NewUserRepo(dir string) (*UserRepo, error) {
 			return nil
 		})
 	}
-	ar.db = globdb
-	return ar, nil
+	ur.db = globdb
+	return ur, nil
 }
 
-func (ar *UserRepo) GetAllUsers() ([]*LoginInfo, error) {
+func (ur *UserRepo) BackupTo(bkpDest string) error {
+	f, err := os.OpenFile(bkpDest, os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	err = ur.db.View(func(tx *bolt.Tx) error {
+		_, err = tx.WriteTo(f)
+		return err
+	})
+	return err
+}
+
+func (ur *UserRepo) GetAllUsers() ([]*LoginInfo, error) {
 	var res []*LoginInfo
-	err := ar.db.View(func(tx *bolt.Tx) error {
+	err := ur.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -54,8 +67,8 @@ func (ar *UserRepo) GetAllUsers() ([]*LoginInfo, error) {
 	return res, nil
 }
 
-func (ar *UserRepo) SaveInstance(info *LoginInfo) error {
-	err := ar.db.Update(func(tx *bolt.Tx) error {
+func (ur *UserRepo) SaveInstance(info *LoginInfo) error {
+	err := ur.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		marshed, err := json.Marshal(info)
 		if err != nil {
@@ -68,9 +81,9 @@ func (ar *UserRepo) SaveInstance(info *LoginInfo) error {
 
 var ErrUserDoesNotExist = errors.New("User with this Name does not exist")
 
-func (ar *UserRepo) GetInstance(infoName string) (*LoginInfo, error) {
+func (ur *UserRepo) GetInstance(infoName string) (*LoginInfo, error) {
 	var info LoginInfo
-	err := ar.db.Update(func(tx *bolt.Tx) error {
+	err := ur.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		marshed := b.Get([]byte(infoName))
 		if marshed == nil {
@@ -84,8 +97,8 @@ func (ar *UserRepo) GetInstance(infoName string) (*LoginInfo, error) {
 	return &info, nil
 }
 
-func (ar *UserRepo) DeleteInstance(infoName string) error {
-	err := ar.db.Update(func(tx *bolt.Tx) error {
+func (ur *UserRepo) DeleteInstance(infoName string) error {
+	err := ur.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		b.Delete([]byte(infoName))
 		return nil

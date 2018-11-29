@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/boltdb/bolt"
+	"os"
 	"path"
 )
 
@@ -31,6 +32,18 @@ func NewBeverageRepo(dir string) (*BeverageRepo, error) {
 	}
 	ar.db = globdb
 	return ar, nil
+}
+
+func (br *BeverageRepo) BackupTo(bkpDest string) error {
+	f, err := os.OpenFile(bkpDest, os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	err = br.db.View(func(tx *bolt.Tx) error {
+		_, err = tx.WriteTo(f)
+		return err
+	})
+	return err
 }
 
 func (ar *BeverageRepo) GetAllBeverages() ([]*Beverage, error) {

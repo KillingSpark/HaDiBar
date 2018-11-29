@@ -1,4 +1,4 @@
-package main
+package admin
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -89,8 +90,6 @@ func (as *AdminServer) handleCon(con net.Conn) {
 			con.Close()
 			return
 		}
-		println(strings.ToLower(cmd.Type))
-		println(string(cmd.Payload))
 		switch strings.ToLower(cmd.Type) {
 		case "listusers":
 			lucmd := ListUsersCommand{}
@@ -112,19 +111,32 @@ func (as *AdminServer) handleCon(con net.Conn) {
 			json.Unmarshal(cmd.Payload, &bkpcmd)
 			io.Copy(con, bytes.NewBuffer(as.doBackup(&bkpcmd)))
 		default:
-			println("Unknown command type")
+			println("Unknown command type received on the unix socket: " + cmd.Type)
 		}
 	}
 }
 
 func (as *AdminServer) doBackup(cmd *PerformBackupCommand) []byte {
-	err := os.MkdirAll(cmd.Path, 0700)
+	bkpPath := cmd.Path
+	if bkpPath == "" {
+		return []byte("No path given")
+	}
+	err := os.MkdirAll(bkpPath, 0700)
 	if err != nil {
 		return []byte(err.Error())
 	}
-	//as.ur.Backup(path.Join(cmd.Path,users.bolt))
-	//as.br.Backup(path.Join(cmd.Path,beverages.bolt))
-	//as.ar.Backup(path.Join(cmd.Path,accounts.bolt))
+	err = as.ur.BackupTo(path.Join(bkpPath, "users.bolt"))
+	if err != nil {
+		return []byte(err.Error())
+	}
+	err = as.br.BackupTo(path.Join(bkpPath, "beverages.bolt"))
+	if err != nil {
+		return []byte(err.Error())
+	}
+	err = as.ar.BackupTo(path.Join(bkpPath, "accounts.bolt"))
+	if err != nil {
+		return []byte(err.Error())
+	}
 	return []byte("OK")
 }
 
@@ -204,29 +216,4 @@ func (as *AdminServer) listBevs(cmd *ListBeveragesCommand) []byte {
 		return []byte(err.Error())
 	}
 	return marshed
-}
-
-func main() {
-	perms, err := permissions.NewPermissions("../data")
-	if err != nil {
-		panic(err.Error())
-	}
-	ur, err := authStuff.NewUserRepo("../data")
-	if err != nil {
-		panic(err.Error())
-	}
-	br, err := beverages.NewBeverageRepo("../data")
-	if err != nil {
-		panic(err.Error())
-	}
-	ar, err := accounts.NewAccountRepo("../data")
-	if err != nil {
-		panic(err.Error())
-	}
-	os.Remove("./admin.socket")
-	as, err := NewAdminServer("./admin.socket", ur, ar, br, perms)
-	if err != nil {
-		panic(err.Error())
-	}
-	as.StartAccepting()
 }

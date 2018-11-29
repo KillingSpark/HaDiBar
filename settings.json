@@ -3,5 +3,6 @@
     "DataDir":"data",
     "WebAppDir":"webapp/",
     "WebAppRoute":"/app",
-    "LoggingLevel":"DEBUG"
+    "LoggingLevel":"DEBUG",
+    "SocketPath": "control.socket"
 }

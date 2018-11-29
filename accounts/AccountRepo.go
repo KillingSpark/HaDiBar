@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/boltdb/bolt"
+	"os"
 	"path"
 )
 
@@ -33,6 +34,18 @@ func NewAccountRepo(dir string) (*AccountRepo, error) {
 	}
 	ar.db = globdb
 	return ar, nil
+}
+
+func (ar *AccountRepo) BackupTo(bkpDest string) error {
+	f, err := os.OpenFile(bkpDest, os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	err = ar.db.View(func(tx *bolt.Tx) error {
+		_, err = tx.WriteTo(f)
+		return err
+	})
+	return err
 }
 
 func (ar *AccountRepo) GetAllAccounts() ([]*Account, error) {
