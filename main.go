@@ -117,7 +117,7 @@ func startServer() {
 	if err != nil {
 		panic(err.Error())
 	}
-	as.StartAccepting()
+	go as.StartAccepting()
 
 	//router.Use(sessMan.CheckSession)
 	apiGroup := router.Group("/api")
