@@ -16,6 +16,8 @@ type AccountService struct {
 
 var ErrNotOwnerOfObject = errors.New("This User is not an owner of this account")
 var ErrIDAlreadyTaken = errors.New("AccountID already taken")
+var ErrInvalidName = errors.New("Name needs to be a nonempty string")
+var ErrTxSourceTargetSame = errors.New("The source and the target of the transaction is the same")
 
 //NewAccountService creates a AccountService and initializes the Data
 func NewAccountService(path string, perms *permissions.Permissions) (*AccountService, error) {
@@ -45,6 +47,9 @@ func (service *AccountService) Add(new *Account, userID string, perm permissions
 
 //Creates a new Account and adds it to the repo
 func (service *AccountService) CreateAdd(name, userID string, perm permissions.PermissionType, perms ...permissions.PermissionType) (*Account, error) {
+	if name == "" {
+		return nil, ErrInvalidName
+	}
 	acc := &Account{}
 	acc.ID = strconv.FormatInt(time.Now().UnixNano(), 10)
 	acc.Owner.Name = name
@@ -121,6 +126,10 @@ func (service *AccountService) GetAccount(accID, userID string) (*Account, error
 
 //UpdateAccount updates the account with the difference and returns the account with the new values
 func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*Account, error) {
+	if name == "" {
+		return nil, ErrInvalidName
+	}
+
 	ok, err := service.perms.CheckPermissionAny(accID, userID, permissions.CRUD, permissions.Update)
 	if err != nil {
 		return nil, err
@@ -142,40 +151,43 @@ func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*
 
 //Transaction updates the accounts if the user has Update permsissions on both accounts and saves the transaction
 func (service *AccountService) Transaction(SourceID, TargetID, userID string, amount int) error {
-	if SourceID != "0" { //0 is reserved for infusions from outside the system
-		ok, err := service.perms.CheckPermissionAny(SourceID, userID, permissions.CRUD, permissions.Update)
+
+	if SourceID == TargetID { //only touch accounts if needed but still record the transaction
+		if SourceID != "0" { //0 is reserved for infusions from outside the system
+			ok, err := service.perms.CheckPermissionAny(SourceID, userID, permissions.CRUD, permissions.Update)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return ErrNotOwnerOfObject
+			}
+			source, err := service.GetAccount(SourceID, userID)
+			if err != nil {
+				return err
+			}
+			source.Value -= amount
+			err = service.accRepo.SaveInstance(source)
+			if err != nil {
+				return err
+			}
+		}
+		ok, err := service.perms.CheckPermissionAny(TargetID, userID, permissions.CRUD, permissions.Update)
 		if err != nil {
 			return err
 		}
 		if !ok {
 			return ErrNotOwnerOfObject
 		}
-		source, err := service.GetAccount(SourceID, userID)
+		target, err := service.GetAccount(TargetID, userID)
 		if err != nil {
 			return err
 		}
-		source.Value -= amount
-		err = service.accRepo.SaveInstance(source)
-		if err != nil {
-			return err
-		}
-	}
-	ok, err := service.perms.CheckPermissionAny(TargetID, userID, permissions.CRUD, permissions.Update)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return ErrNotOwnerOfObject
-	}
-	target, err := service.GetAccount(TargetID, userID)
-	if err != nil {
-		return err
-	}
 
-	target.Value += amount
-	err = service.accRepo.SaveInstance(target)
-	if err != nil {
-		return err
+		target.Value += amount
+		err = service.accRepo.SaveInstance(target)
+		if err != nil {
+			return err
+		}
 	}
 	trans := &Transaction{}
 	trans.SourceID = SourceID
@@ -183,7 +195,7 @@ func (service *AccountService) Transaction(SourceID, TargetID, userID string, am
 	trans.Timestamp = time.Now()
 	trans.Amount = amount
 	trans.ID = strconv.Itoa(trans.Timestamp.Nanosecond())
-	err = service.accRepo.SaveTransaction(trans)
+	err := service.accRepo.SaveTransaction(trans)
 	service.perms.SetPermission(trans.ID, userID, permissions.CRUD, true)
 	if err != nil {
 		return err

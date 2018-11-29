@@ -19,6 +19,9 @@ type BeverageService struct {
 var ErrInvalidID = errors.New("ID for beverage is invalid")
 var ErrInvalidGroupID = errors.New("ID for beverage is not in your group")
 var ErrNoPermission = errors.New("No permission for this action")
+var ErrInvalidValue = errors.New("Values needs to be a positive integers")
+var ErrInvalidAvailable = errors.New("Available needs to be a positive integers")
+var ErrInvalidName = errors.New("Name needs to be a nonempty string")
 
 //NewBeverageService creates a new Service
 func NewBeverageService(path string, perms *permissions.Permissions) (*BeverageService, error) {
@@ -63,8 +66,18 @@ func (service *BeverageService) GetBeverage(bevID, userID string) (*Beverage, er
 
 //NewBeverage creates a new beverage and stores it in the database
 func (service *BeverageService) NewBeverage(userID, aName string, aValue, aAvailable int) (*Beverage, error) {
-	bev := &Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue, Available: aAvailable}
 
+	if aName == "" {
+		return nil, ErrInvalidName
+	}
+	if aValue < 0 {
+		return nil, ErrInvalidValue
+	}
+	if aAvailable < 0 {
+		return nil, ErrInvalidAvailable
+	}
+
+	bev := &Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue, Available: aAvailable}
 	service.perms.SetPermission(bev.ID, userID, permissions.CRUD, true)
 
 	if err := service.bevRepo.SaveInstance(bev); err != nil {
@@ -83,6 +96,16 @@ func (service *BeverageService) UpdateBeverage(bevID, userID, aName string, aVal
 	}
 	if !ok {
 		return nil, ErrNoPermission
+	}
+
+	if aName == "" {
+		return nil, ErrInvalidName
+	}
+	if aValue < 0 {
+		return nil, ErrInvalidValue
+	}
+	if aAvailable < 0 {
+		return nil, ErrInvalidAvailable
 	}
 
 	bev, err := service.GetBeverage(bevID, userID)
