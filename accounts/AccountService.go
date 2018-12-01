@@ -126,10 +126,6 @@ func (service *AccountService) GetAccount(accID, userID string) (*Account, error
 
 //UpdateAccount updates the account with the difference and returns the account with the new values
 func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*Account, error) {
-	if name == "" {
-		return nil, ErrInvalidName
-	}
-
 	ok, err := service.perms.CheckPermissionAny(accID, userID, permissions.CRUD, permissions.Update)
 	if err != nil {
 		return nil, err
@@ -152,7 +148,7 @@ func (service *AccountService) UpdateAccount(accID, userID string, aDiff int) (*
 //Transaction updates the accounts if the user has Update permsissions on both accounts and saves the transaction
 func (service *AccountService) Transaction(SourceID, TargetID, userID string, amount int) error {
 
-	if SourceID == TargetID { //only touch accounts if needed but still record the transaction
+	if SourceID != TargetID { //only touch accounts if needed but still record the transaction
 		if SourceID != "0" { //0 is reserved for infusions from outside the system
 			ok, err := service.perms.CheckPermissionAny(SourceID, userID, permissions.CRUD, permissions.Update)
 			if err != nil {
