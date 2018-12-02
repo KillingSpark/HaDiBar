@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/killingspark/hadibar/logger"
@@ -14,10 +15,11 @@ import (
 
 //LoginInfo is passed into the context if the session has a logged in user
 type LoginInfo struct {
-	Name     string
-	LoggedIn bool
-	Salt     string
-	Pwhash   string
+	Name      string
+	LoggedIn  bool
+	Salt      string
+	Pwhash    string
+	lastLogin time.Time
 }
 
 //Authentikator is an interface that will allow for other sign-in methods later
@@ -27,26 +29,48 @@ type Authentikator interface {
 
 //Session identifies a session with a Client. If the client logs in, the session remembers the login info (without the password of course) until the client logs out.
 type Session struct {
-	id   string
-	info *LoginInfo
+	id         string
+	info       *LoginInfo
+	lastAction time.Time
 }
 
 //Auth maps session ids to sessions
 type Auth struct {
 	sessionMap map[string](*Session)
+	sessionTTL time.Duration
 	tester     Authentikator
 }
 
 //NewAuth is a constructor for Auth
-func NewAuth(datadir string) (*Auth, error) {
+func NewAuth(datadir string, sessionTTL int) (*Auth, error) {
 	auth := &Auth{}
+	auth.sessionTTL = time.Duration(sessionTTL) * time.Second
 	auth.sessionMap = make(map[string](*Session))
 	var err error
 	auth.tester, err = NewLoginService(datadir)
 	if err != nil {
 		return nil, err
 	}
+	go auth.cleanSessions()
 	return auth, nil
+}
+
+func (auth *Auth) cleanSessions() {
+	if auth.sessionTTL <= 0 {
+		return
+	}
+	for {
+		time.Sleep(1 * time.Minute)
+		for key, ses := range auth.sessionMap {
+			toRemove := make([]string, 0)
+			if ses.lastAction.Add(auth.sessionTTL).Before(time.Now()) {
+				toRemove = append(toRemove, key)
+			}
+			for _, key := range toRemove {
+				delete(auth.sessionMap, key)
+			}
+		}
+	}
 }
 
 //AddNewSession creates a new sessionid and remembers the session for later reference by the client
@@ -57,7 +81,7 @@ func (auth *Auth) AddNewSession() string {
 	}
 	encID := base64.URLEncoding.EncodeToString(ID)
 
-	session := Session{id: encID}
+	session := Session{id: encID, lastAction: time.Now()}
 	auth.sessionMap[encID] = &session
 	return session.id
 }
@@ -124,6 +148,7 @@ func (auth *Auth) CheckSession(ctx *gin.Context) {
 	ctx.Writer.Header().Set("sessionID", sessionID)
 	session, err := auth.getSession(sessionID)
 	if err == nil {
+		session.lastAction = time.Now()
 		ctx.Set("session", session)
 		ctx.Next()
 	} else {

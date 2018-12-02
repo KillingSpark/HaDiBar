@@ -48,8 +48,8 @@ func (ls *LoginService) Add(new *LoginInfo) error {
 func createNewUser(hasher hash.Hash, username, passwd string) *LoginInfo {
 	user := &LoginInfo{}
 	user.Name = username
-	user.Salt = saltPw(hasher, strconv.FormatInt(time.Now().UnixNano()%rand.Int63(), 10), username)
-	user.Pwhash = saltPw(hasher, passwd, user.Salt)
+	user.Salt = SaltPw(hasher, strconv.FormatInt(time.Now().UnixNano()%rand.Int63(), 10), username)
+	user.Pwhash = SaltPw(hasher, passwd, user.Salt)
 	return user
 }
 
@@ -67,13 +67,14 @@ func (ls *LoginService) isValid(userName, passwd string) (*LoginInfo, error) {
 	}
 
 	//user exists already, check password
-	if saltPw(ls.hasher, passwd, user.Salt) == user.Pwhash {
+	if SaltPw(ls.hasher, passwd, user.Salt) == user.Pwhash {
+		user.lastLogin = time.Now()
 		return user, nil
 	}
 	return nil, ErrWrongCredetials
 }
 
-func saltPw(hasher hash.Hash, pw, salt string) string {
+func SaltPw(hasher hash.Hash, pw, salt string) string {
 	hasher.Reset()
 	hasher.Write([]byte(pw + salt))
 	saltedpw := make([]byte, 4*int(math.Ceil((float64(32)/3))))

@@ -74,7 +74,7 @@ func startServer() {
 		ctx.Redirect(300, viper.GetString("WebAppRoute"))
 	})
 
-	auth, err := authStuff.NewAuth(viper.GetString("DataDir"))
+	auth, err := authStuff.NewAuth(viper.GetString("DataDir"), viper.GetInt("SessionTTL"))
 	if err != nil {
 		panic(err.Error())
 	}
