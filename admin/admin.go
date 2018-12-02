@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -117,6 +118,8 @@ func (as *AdminServer) handleCon(con net.Conn) {
 			bkpcmd := PerformBackupCommand{}
 			json.Unmarshal(cmd.Payload, &bkpcmd)
 			io.Copy(con, bytes.NewBuffer(as.doBackup(&bkpcmd)))
+		case "clean":
+			io.Copy(con, bytes.NewBuffer(as.cleanUpOrphaned()))
 		default:
 			println("Unknown command type received on the unix socket: " + cmd.Type)
 		}
@@ -173,11 +176,49 @@ func (as *AdminServer) doBackup(cmd *PerformBackupCommand) []byte {
 	return []byte("OK")
 }
 
+func (as *AdminServer) cleanUpOrphaned() []byte {
+	perms, err := as.perm.GetAllAsMap()
+	if err != nil {
+		return []byte(err.Error())
+	}
+	objsFound := make(map[string]bool)
+	for _, usrobjs := range perms {
+		for objID := range usrobjs {
+			objsFound[objID] = true
+		}
+	}
+
+	accs, err := as.ar.GetAllAccounts()
+	if err != nil {
+		return []byte(err.Error())
+	}
+	bevs, err := as.br.GetAllBeverages()
+	if err != nil {
+		return []byte(err.Error())
+	}
+	deleted := 0
+	for _, acc := range accs {
+		if _, ok := objsFound[acc.ID]; !ok {
+			as.ar.DeleteInstance(acc.ID)
+			deleted++
+		}
+	}
+	for _, bev := range bevs {
+		if _, ok := objsFound[bev.ID]; !ok {
+			as.br.DeleteInstance(bev.ID)
+			deleted++
+		}
+	}
+
+	return []byte("OK, cleaned: " + strconv.Itoa(deleted))
+}
+
 func (as *AdminServer) deleteUser(cmd *DeleteUserCommand) []byte {
 	err := as.ur.DeleteInstance(cmd.Name)
 	if err != nil {
 		return []byte(err.Error())
 	}
+	as.perm.RemoveUsersPermissions(cmd.Name)
 	return []byte("OK")
 }
 

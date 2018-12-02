@@ -30,8 +30,6 @@ var (
 )
 
 type Permissions struct {
-	//maps from objectID,userID to the permissiontypes given
-	permmap           map[ObjectID](map[UserID](map[PermissionType]bool))
 	db                *bolt.DB
 	defaultPermission bool
 }
@@ -61,6 +59,36 @@ func (p *Permissions) BackupTo(bkpDest string) error {
 		return err
 	})
 	return err
+}
+
+func (p *Permissions) RemoveUsersPermissions(usrID string) error {
+	err := p.db.Update(func(tx *bolt.Tx) error {
+		err := tx.DeleteBucket([]byte(usrID))
+		return err
+	})
+	return err
+}
+
+func (p *Permissions) GetAllAsMap() (map[string](map[string](map[PermissionType]bool)), error) {
+	res := make(map[string](map[string](map[PermissionType]bool)))
+	err := p.db.View(func(tx *bolt.Tx) error {
+		usrc := tx.Cursor()
+		for usr, _ := usrc.First(); usr != nil; usr, _ = usrc.Next() {
+			res[string(usr)] = make(map[string](map[PermissionType]bool))
+			usrb := tx.Bucket(usr)
+			objc := usrb.Cursor()
+			for obj, _ := objc.First(); obj != nil; obj, _ = objc.Next() {
+				res[string(usr)][string(obj)] = make(map[PermissionType]bool)
+				objb := usrb.Bucket(obj)
+				permc := objb.Cursor()
+				for p, v := permc.First(); p != nil; p, v = permc.Next() {
+					res[string(usr)][string(obj)][PermissionType(p[0])] = v[0] == 1
+				}
+			}
+		}
+		return nil
+	})
+	return res, err
 }
 
 func (p *Permissions) SetPermission(objID, usrID string, permission PermissionType, value bool) error {
