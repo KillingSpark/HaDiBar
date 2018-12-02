@@ -2,6 +2,7 @@ package permissions
 
 import (
 	"errors"
+	"os"
 	"path"
 
 	"github.com/boltdb/bolt"
@@ -48,6 +49,18 @@ func NewPermissions(dir string) (*Permissions, error) {
 	}
 	perm.db = globdb
 	return perm, nil
+}
+
+func (p *Permissions) BackupTo(bkpDest string) error {
+	f, err := os.OpenFile(bkpDest, os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	err = p.db.View(func(tx *bolt.Tx) error {
+		_, err = tx.WriteTo(f)
+		return err
+	})
+	return err
 }
 
 func (p *Permissions) SetPermission(objID, usrID string, permission PermissionType, value bool) error {

@@ -68,7 +68,8 @@ func (ls *LoginService) isValid(userName, passwd string) (*LoginInfo, error) {
 
 	//user exists already, check password
 	if SaltPw(ls.hasher, passwd, user.Salt) == user.Pwhash {
-		user.lastLogin = time.Now()
+		user.LastLogin = time.Now()
+		ls.userRepo.SaveInstance(user)
 		return user, nil
 	}
 	return nil, ErrWrongCredetials

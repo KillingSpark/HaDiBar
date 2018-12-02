@@ -100,8 +100,8 @@ func (ur *UserRepo) GetInstance(infoName string) (*LoginInfo, error) {
 func (ur *UserRepo) DeleteInstance(infoName string) error {
 	err := ur.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
-		b.Delete([]byte(infoName))
-		return nil
+		err := b.Delete([]byte(infoName))
+		return err
 	})
 	return err
 }

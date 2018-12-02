@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 )
 
 type AdminServer struct {
@@ -63,8 +64,10 @@ type ListAccountsCommand struct {
 }
 
 type ListTransactionssCommand struct {
-	Name1 string //Username optional to filter for
-	Name2 string //Username optional to filter for
+	ID1  string    //Username optional to filter for
+	ID2  string    //Username optional to filter for
+	From time.Time //Oldest transaction
+	To   time.Time //Newest transaction
 }
 
 type PerformBackupCommand struct {
@@ -106,6 +109,10 @@ func (as *AdminServer) handleCon(con net.Conn) {
 			lacmd := ListAccountsCommand{}
 			json.Unmarshal(cmd.Payload, &lacmd)
 			io.Copy(con, bytes.NewBuffer(as.listAccs(&lacmd)))
+		case "listtxs":
+			ltxscmd := ListTransactionssCommand{}
+			json.Unmarshal(cmd.Payload, &ltxscmd)
+			io.Copy(con, bytes.NewBuffer(as.listTransactions(&ltxscmd)))
 		case "backup":
 			bkpcmd := PerformBackupCommand{}
 			json.Unmarshal(cmd.Payload, &bkpcmd)
@@ -114,6 +121,28 @@ func (as *AdminServer) handleCon(con net.Conn) {
 			println("Unknown command type received on the unix socket: " + cmd.Type)
 		}
 	}
+}
+
+func (as *AdminServer) listTransactions(cmd *ListTransactionssCommand) []byte {
+	txs, err := as.ar.GetTransactions()
+	if err != nil {
+		return []byte(err.Error())
+	}
+	txsFiltered := make([]*accounts.Transaction, 0)
+
+	for _, tx := range txs {
+		if tx.SourceID == cmd.ID1 || tx.TargetID == cmd.ID1 ||
+			tx.SourceID == cmd.ID2 || tx.TargetID == cmd.ID2 || (cmd.ID1 == "" && cmd.ID2 == "") {
+			if cmd.To.Equal(cmd.From) || (tx.Timestamp.Before(cmd.To) && tx.Timestamp.After(cmd.From)) {
+				txsFiltered = append(txsFiltered, tx)
+			}
+		}
+	}
+	marshed, err := json.Marshal(txsFiltered)
+	if err != nil {
+		return []byte(err.Error())
+	}
+	return marshed
 }
 
 func (as *AdminServer) doBackup(cmd *PerformBackupCommand) []byte {
@@ -134,6 +163,10 @@ func (as *AdminServer) doBackup(cmd *PerformBackupCommand) []byte {
 		return []byte(err.Error())
 	}
 	err = as.ar.BackupTo(path.Join(bkpPath, "accounts.bolt"))
+	if err != nil {
+		return []byte(err.Error())
+	}
+	err = as.perm.BackupTo(path.Join(bkpPath, "permissions.bolt"))
 	if err != nil {
 		return []byte(err.Error())
 	}

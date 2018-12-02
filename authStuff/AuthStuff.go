@@ -19,7 +19,7 @@ type LoginInfo struct {
 	LoggedIn  bool
 	Salt      string
 	Pwhash    string
-	lastLogin time.Time
+	LastLogin time.Time
 }
 
 //Authentikator is an interface that will allow for other sign-in methods later
