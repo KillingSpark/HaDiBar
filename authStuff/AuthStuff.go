@@ -20,6 +20,7 @@ type LoginInfo struct {
 	Salt      string
 	Pwhash    string
 	LastLogin time.Time
+	Email     string
 }
 
 //Authentikator is an interface that will allow for other sign-in methods later
@@ -38,7 +39,7 @@ type Session struct {
 type Auth struct {
 	sessionMap map[string](*Session)
 	sessionTTL time.Duration
-	tester     Authentikator
+	ls         *LoginService
 }
 
 //NewAuth is a constructor for Auth
@@ -47,7 +48,7 @@ func NewAuth(datadir string, sessionTTL int) (*Auth, error) {
 	auth.sessionTTL = time.Duration(sessionTTL) * time.Second
 	auth.sessionMap = make(map[string](*Session))
 	var err error
-	auth.tester, err = NewLoginService(datadir)
+	auth.ls, err = NewLoginService(datadir)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +100,7 @@ func (auth *Auth) LogIn(sesID, name, password string) error {
 		return ErrAlreadyLoggedIn
 	}
 
-	newinfo, err := auth.tester.isValid(name, password)
+	newinfo, err := auth.ls.isValid(name, password)
 
 	if err != nil {
 		return err

@@ -45,6 +45,18 @@ func (ls *LoginService) Add(new *LoginInfo) error {
 	return nil
 }
 
+func (ls *LoginService) SetEmail(username, email string) error {
+	user, err := ls.userRepo.GetInstance(username)
+	if err != nil {
+		return err
+	}
+	user.Email = email
+	if err = ls.userRepo.SaveInstance(user); err != nil {
+		return err
+	}
+	return nil
+}
+
 func createNewUser(hasher hash.Hash, username, passwd string) *LoginInfo {
 	user := &LoginInfo{}
 	user.Name = username

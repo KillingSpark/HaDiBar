@@ -52,6 +52,10 @@ func makeLoginRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {
 	//used to get an initial session id if wished
 	router.GET("/session/getid", lc.NewSession)
 }
+func makeUserUpdateRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {
+	router.POST("/user/email", lc.SetEmail)
+	router.GET("/user/info", lc.GetUser)
+}
 
 func main() {
 	viper.AddConfigPath(".")
@@ -129,6 +133,7 @@ func startServer() {
 	makeAccountRoutes(floorSpecificGroup, ac)
 	makeReportRoutes(floorSpecificGroup, rc)
 	makeLoginRoutes(apiGroup, lc)
+	makeUserUpdateRoutes(floorSpecificGroup, lc)
 
 	log.Fatal(http.ListenAndServe(":"+viper.GetString("Port"), router))
 }
