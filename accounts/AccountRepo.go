@@ -6,6 +6,9 @@ import (
 	"github.com/boltdb/bolt"
 	"os"
 	"path"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var globdb *bolt.DB
@@ -108,30 +111,68 @@ func (ar *AccountRepo) DeleteInstance(accID string) error {
 	return err
 }
 
+func getPageName(t *time.Time) string {
+	return strconv.Itoa(t.Year()) + "-" + t.Month().String()
+}
+
 func (ar *AccountRepo) SaveTransaction(trans *Transaction) error {
 	err := ar.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketNameTrans))
+		pageName := getPageName(&trans.Timestamp)
+		pageb := b.Bucket([]byte(pageName))
+		pageb, err := b.CreateBucketIfNotExists([]byte(pageName))
+		if err != nil {
+			return err
+		}
 		marshed, err := json.Marshal(trans)
 		if err != nil {
 			return err
 		}
-		return b.Put([]byte(trans.ID), marshed)
+		return pageb.Put([]byte(trans.ID), marshed)
 	})
 	return err
 }
 
 func (ar *AccountRepo) GetTransactions() ([]*Transaction, error) {
+	return ar.GetTransactionsPages(nil, nil)
+}
+
+func (ar *AccountRepo) GetTransactionsPages(from, to *time.Time) ([]*Transaction, error) {
+	firstPageName := "0000-00"
+	lastpagename := "9999-99"
+	if from != nil {
+		firstPageName = getPageName(from)
+	}
+	if to != nil {
+		lastpagename = getPageName(to)
+	}
+
 	var res []*Transaction
 	err := ar.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketNameTrans))
 		c := b.Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			trans := &Transaction{}
-			err := json.Unmarshal([]byte(v), trans)
-			if err != nil {
-				continue //skip invalied entries. maybe implement cleanup...
+		for pageName, _ := c.First(); pageName != nil; pageName, _ = c.Next() {
+			println(string(pageName))
+			if strings.Compare(string(pageName), lastpagename) > 0 {
+				break
 			}
-			res = append(res, trans)
+			if strings.Compare(string(pageName), firstPageName) < 0 {
+				continue
+			}
+
+			pageb := b.Bucket(pageName)
+			if pageb == nil {
+				continue
+			}
+			pagec := pageb.Cursor()
+			for k, v := pagec.First(); k != nil; k, v = pagec.Next() {
+				trans := &Transaction{}
+				err := json.Unmarshal([]byte(v), trans)
+				if err != nil {
+					continue //skip invalied entries. maybe implement cleanup...
+				}
+				res = append(res, trans)
+			}
 		}
 		return nil
 	})

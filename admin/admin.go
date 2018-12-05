@@ -129,7 +129,7 @@ func (as *AdminServer) handleCon(con net.Conn) {
 func (as *AdminServer) listTransactions(cmd *ListTransactionssCommand) []byte {
 	txs, err := as.ar.GetTransactions()
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	txsFiltered := make([]*accounts.Transaction, 0)
 
@@ -143,7 +143,7 @@ func (as *AdminServer) listTransactions(cmd *ListTransactionssCommand) []byte {
 	}
 	marshed, err := json.Marshal(txsFiltered)
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	return marshed
 }
@@ -151,35 +151,35 @@ func (as *AdminServer) listTransactions(cmd *ListTransactionssCommand) []byte {
 func (as *AdminServer) doBackup(cmd *PerformBackupCommand) []byte {
 	bkpPath := cmd.Path
 	if bkpPath == "" {
-		return []byte("No path given")
+		return []byte(`{"Result": "Err", "Text": "No path given"}`)
 	}
 	err := os.MkdirAll(bkpPath, 0700)
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	err = as.ur.BackupTo(path.Join(bkpPath, "users.bolt"))
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	err = as.br.BackupTo(path.Join(bkpPath, "beverages.bolt"))
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	err = as.ar.BackupTo(path.Join(bkpPath, "accounts.bolt"))
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	err = as.perm.BackupTo(path.Join(bkpPath, "permissions.bolt"))
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
-	return []byte("OK")
+	return []byte(`{"Result": "OK"}`)
 }
 
 func (as *AdminServer) cleanUpOrphaned() []byte {
 	perms, err := as.perm.GetAllAsMap()
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	objsFound := make(map[string]bool)
 	for _, usrobjs := range perms {
@@ -190,11 +190,11 @@ func (as *AdminServer) cleanUpOrphaned() []byte {
 
 	accs, err := as.ar.GetAllAccounts()
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	bevs, err := as.br.GetAllBeverages()
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	deleted := 0
 	for _, acc := range accs {
@@ -209,27 +209,28 @@ func (as *AdminServer) cleanUpOrphaned() []byte {
 			deleted++
 		}
 	}
-
-	return []byte("OK, cleaned: " + strconv.Itoa(deleted))
+	return []byte(`{"Result": "OK", "Text":  "cleaned ` + strconv.Itoa(deleted) + `"}`)
 }
 
 func (as *AdminServer) deleteUser(cmd *DeleteUserCommand) []byte {
+	println("delete: " + cmd.Name)
 	err := as.ur.DeleteInstance(cmd.Name)
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	as.perm.RemoveUsersPermissions(cmd.Name)
-	return []byte("OK")
+	println("deleted: " + cmd.Name)
+	return []byte(`{"Result": "OK"}`)
 }
 
 func (as *AdminServer) listUsers(cmd *ListUsersCommand) []byte {
 	users, err := as.ur.GetAllUsers()
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	marshed, err := json.Marshal(users)
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	return marshed
 }
@@ -237,7 +238,7 @@ func (as *AdminServer) listUsers(cmd *ListUsersCommand) []byte {
 func (as *AdminServer) listAccs(cmd *ListAccountsCommand) []byte {
 	accs, err := as.ar.GetAllAccounts()
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 
 	var accsFiltered []*accounts.Account
@@ -258,7 +259,7 @@ func (as *AdminServer) listAccs(cmd *ListAccountsCommand) []byte {
 	}
 	marshed, err := json.Marshal(accsFiltered)
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	return marshed
 }
@@ -266,7 +267,7 @@ func (as *AdminServer) listAccs(cmd *ListAccountsCommand) []byte {
 func (as *AdminServer) listBevs(cmd *ListBeveragesCommand) []byte {
 	bevs, err := as.br.GetAllBeverages()
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 
 	var bevsFiltered []*beverages.Beverage
@@ -287,7 +288,7 @@ func (as *AdminServer) listBevs(cmd *ListBeveragesCommand) []byte {
 	}
 	marshed, err := json.Marshal(bevsFiltered)
 	if err != nil {
-		return []byte(err.Error())
+		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
 	return marshed
 }

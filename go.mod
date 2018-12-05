@@ -2,6 +2,8 @@ module github.com/killingspark/hadibar
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
+	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/boltdb/bolt v1.3.1
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v1.3.0
@@ -18,6 +20,7 @@ require (
 	golang.org/x/crypto v0.0.0-20181106171534-e4dc69e5b2fd
 	golang.org/x/net v0.0.0-20181114220301-adae6a3d119a
 	golang.org/x/sync v0.0.0-20181108010431-42b317875d0f // indirect
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
 )

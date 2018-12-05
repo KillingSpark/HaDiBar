@@ -128,9 +128,33 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 			return
 		}
 	}
-	accID := ctx.PostForm("accid")
+	accID := ctx.Query("accid")
+	fromDate := ctx.Query("from")
+	toDate := ctx.Query("to")
 
-	txs, err := rc.accsrv.GetTransactions(accID, info.Name)
+	var from, to *time.Time
+	if fromDate != "" {
+		x, err := time.Parse("2006-01-02", fromDate)
+		from = &x
+		if err != nil {
+			response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+	if toDate != "" {
+		x, err := time.Parse("2006-01-02", toDate)
+		to = &x
+		if err != nil {
+			response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	txs, err := rc.accsrv.GetTransactions(accID, info.Name, from, to)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))

@@ -200,8 +200,8 @@ func (service *AccountService) Transaction(SourceID, TargetID, userID string, am
 }
 
 //GetTransactions gets all transactions concerning this account (or all the user has access to if accID == "")
-func (service *AccountService) GetTransactions(accID, userID string) ([]*Transaction, error) {
-	list, err := service.accRepo.GetTransactions()
+func (service *AccountService) GetTransactions(accID, userID string, from, to *time.Time) ([]*Transaction, error) {
+	list, err := service.accRepo.GetTransactionsPages(from, to)
 	if err != nil {
 		return nil, err
 	}
