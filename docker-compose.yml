@@ -15,6 +15,7 @@ services:
     networks:
       - webnet
     volumes:
-      - ~/.cache/hadibar:/app/data
+      - ~/.cache/hadibar/data:/app/data
+      - ~/.cache/hadibar/sockets:/app/sockets
 networks:
   webnet:

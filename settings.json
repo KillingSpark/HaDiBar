@@ -4,5 +4,5 @@
     "WebAppDir":"webapp/",
     "WebAppRoute":"/app",
     "LoggingLevel":"DEBUG",
-    "SocketPath": "control.socket"
+    "SocketPath": "sockets/control.socket"
 }
