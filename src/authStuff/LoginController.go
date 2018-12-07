@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/logger"
-	"github.com/killingspark/hadibar/restapi"
+	"github.com/killingspark/hadibar/src/logger"
+	"github.com/killingspark/hadibar/src/restapi"
 )
 
 //LoginController is the controller for the logins

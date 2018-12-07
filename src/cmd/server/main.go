@@ -1,18 +1,18 @@
 package main
 
 import (
-	"github.com/killingspark/hadibar/admin"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/accounts"
-	"github.com/killingspark/hadibar/authStuff"
-	"github.com/killingspark/hadibar/beverages"
-	"github.com/killingspark/hadibar/logger"
-	"github.com/killingspark/hadibar/permissions"
-	"github.com/killingspark/hadibar/reports"
+	"github.com/killingspark/hadibar/src/accounts"
+	"github.com/killingspark/hadibar/src/admin"
+	"github.com/killingspark/hadibar/src/authStuff"
+	"github.com/killingspark/hadibar/src/beverages"
+	"github.com/killingspark/hadibar/src/logger"
+	"github.com/killingspark/hadibar/src/permissions"
+	"github.com/killingspark/hadibar/src/reports"
 
 	"github.com/spf13/viper"
 )

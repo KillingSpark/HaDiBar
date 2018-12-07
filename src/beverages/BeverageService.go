@@ -2,11 +2,10 @@ package beverages
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
-	"github.com/killingspark/hadibar/permissions"
-
-	"strconv"
+	"github.com/killingspark/hadibar/src/permissions"
 )
 
 //BeverageService handles the persistence of beverages for us

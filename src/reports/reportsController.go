@@ -6,13 +6,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/killingspark/hadibar/permissions"
-
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/accounts"
-	"github.com/killingspark/hadibar/authStuff"
-	"github.com/killingspark/hadibar/beverages"
-	"github.com/killingspark/hadibar/restapi"
+	"github.com/killingspark/hadibar/src/accounts"
+	"github.com/killingspark/hadibar/src/authStuff"
+	"github.com/killingspark/hadibar/src/beverages"
+	"github.com/killingspark/hadibar/src/permissions"
+	"github.com/killingspark/hadibar/src/restapi"
 )
 
 type ReportsController struct {

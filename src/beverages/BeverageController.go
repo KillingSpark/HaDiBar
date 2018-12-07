@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/killingspark/hadibar/authStuff"
-	"github.com/killingspark/hadibar/permissions"
-	"github.com/killingspark/hadibar/restapi"
+	"github.com/killingspark/hadibar/src/authStuff"
+	"github.com/killingspark/hadibar/src/permissions"
+	"github.com/killingspark/hadibar/src/restapi"
 )
 
 //BeverageController : Controller for the Beverages

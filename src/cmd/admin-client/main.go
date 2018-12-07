@@ -3,9 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/killingspark/hadibar/admin"
 	"net"
 	"os"
+
+	"github.com/killingspark/hadibar/src/admin"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )

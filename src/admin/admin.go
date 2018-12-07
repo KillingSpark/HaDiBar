@@ -3,10 +3,6 @@ package admin
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/killingspark/hadibar/accounts"
-	"github.com/killingspark/hadibar/authStuff"
-	"github.com/killingspark/hadibar/beverages"
-	"github.com/killingspark/hadibar/permissions"
 	"io"
 	"net"
 	"os"
@@ -14,6 +10,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/killingspark/hadibar/src/accounts"
+	"github.com/killingspark/hadibar/src/authStuff"
+	"github.com/killingspark/hadibar/src/beverages"
+	"github.com/killingspark/hadibar/src/permissions"
 )
 
 type AdminServer struct {

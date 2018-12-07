@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/logger"
-	"github.com/killingspark/hadibar/restapi"
+	"github.com/killingspark/hadibar/src/logger"
+	"github.com/killingspark/hadibar/src/restapi"
 )
 
 //LoginInfo is passed into the context if the session has a logged in user

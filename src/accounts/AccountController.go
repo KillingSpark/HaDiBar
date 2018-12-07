@@ -2,14 +2,12 @@ package accounts
 
 import (
 	"fmt"
-
-	"github.com/killingspark/hadibar/permissions"
-
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/authStuff"
-	"github.com/killingspark/hadibar/restapi"
+	"github.com/killingspark/hadibar/src/authStuff"
+	"github.com/killingspark/hadibar/src/permissions"
+	"github.com/killingspark/hadibar/src/restapi"
 )
 
 //AccountController is the controller for accounts

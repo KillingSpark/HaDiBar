@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/killingspark/hadibar/permissions"
+	"github.com/killingspark/hadibar/src/permissions"
 )
 
 //AccountService is a service for accessing accounts
