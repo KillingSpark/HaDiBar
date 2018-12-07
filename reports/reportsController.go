@@ -165,6 +165,14 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 	idMap := make(map[string]string)
 	report := "<table><th>Source</th><th>Target</th><th>Amount</th><th>Time</th>"
 
+	type txListItem struct {
+		Source string
+		Target string
+		Amount int
+		Time   string
+	}
+	txList := make([]txListItem, 0)
+
 	sort.Slice(txs, func(i, j int) bool {
 		return txs[i].Timestamp.After(txs[j].Timestamp)
 	})
@@ -196,10 +204,11 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 			idMap[tx.TargetID] = acc.Owner.Name
 			trgtName = acc.Owner.Name
 		}
-		report += makeTransactionRow(srcName, trgtName, tx.Amount, tx.Timestamp.Format(time.UnixDate))
+		report += makeTransactionRow(srcName, trgtName, tx.Amount, tx.Timestamp.Format(time.RFC3339))
+		txList = append(txList, txListItem{Source: srcName, Target: trgtName, Amount: tx.Amount, Time: tx.Timestamp.Format(time.RFC3339)})
 	}
 	report += "</table>"
-	response, _ := restapi.NewOkResponse(report).Marshal()
+	response, _ := restapi.NewOkResponse(txList).Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
 }
