@@ -1,30 +1,32 @@
 package beverages
 
 import (
-	"encoding/json"
 	"errors"
+	"strconv"
 	"time"
 
-	"github.com/killingspark/hadibar/permissions"
-	scribble "github.com/nanobox-io/golang-scribble"
-
-	"strconv"
+	"github.com/killingspark/hadibar/src/permissions"
 )
 
 //BeverageService handles the persistence of beverages for us
 type BeverageService struct {
 	path    string
-	bevRepo *scribble.Driver
+	bevRepo *BeverageRepo
 	perms   *permissions.Permissions
 }
 
-var collectionName = "beverages"
+var ErrInvalidID = errors.New("ID for beverage is invalid")
+var ErrInvalidGroupID = errors.New("ID for beverage is not in your group")
+var ErrNoPermission = errors.New("No permission for this action")
+var ErrInvalidValue = errors.New("Values needs to be a positive integers")
+var ErrInvalidAvailable = errors.New("Available needs to be a positive integers")
+var ErrInvalidName = errors.New("Name needs to be a nonempty string")
 
 //NewBeverageService creates a new Service
 func NewBeverageService(path string, perms *permissions.Permissions) (*BeverageService, error) {
 	bs := &BeverageService{}
 	var err error
-	bs.bevRepo, err = scribble.New(path, nil)
+	bs.bevRepo, err = NewBeverageRepo(path)
 	if err != nil {
 		return nil, err
 	}
@@ -34,17 +36,12 @@ func NewBeverageService(path string, perms *permissions.Permissions) (*BeverageS
 
 //GetBeverages returns all existing beverages
 func (service *BeverageService) GetBeverages(userID string) ([]*Beverage, error) {
-	list, err := service.bevRepo.ReadAll(collectionName)
+	list, err := service.bevRepo.GetAllBeverages()
 	if err != nil {
 		return nil, err
 	}
 	var bevs []*Beverage
-	for _, item := range list {
-		bev := &Beverage{}
-		err := json.Unmarshal([]byte(item), bev)
-		if err != nil {
-			continue
-		}
+	for _, bev := range list {
 		if ok, _ := service.perms.CheckPermissionAny(bev.ID, userID, permissions.Read, permissions.CRUD); ok {
 			bevs = append(bevs, bev)
 		}
@@ -52,13 +49,9 @@ func (service *BeverageService) GetBeverages(userID string) ([]*Beverage, error)
 	return bevs, nil
 }
 
-var ErrInvalidID = errors.New("ID for beverage is invalid")
-var ErrInvalidGroupID = errors.New("ID for beverage is not in your group")
-
 //GetBeverage returns the identified beverage
 func (service *BeverageService) GetBeverage(bevID, userID string) (*Beverage, error) {
-	bev := &Beverage{}
-	err := service.bevRepo.Read(collectionName, bevID, bev)
+	bev, err := service.bevRepo.GetInstance(bevID)
 	if err != nil {
 		return nil, ErrInvalidID
 	}
@@ -72,11 +65,21 @@ func (service *BeverageService) GetBeverage(bevID, userID string) (*Beverage, er
 
 //NewBeverage creates a new beverage and stores it in the database
 func (service *BeverageService) NewBeverage(userID, aName string, aValue, aAvailable int) (*Beverage, error) {
-	bev := &Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue, Available: aAvailable}
 
+	if aName == "" {
+		return nil, ErrInvalidName
+	}
+	if aValue < 0 {
+		return nil, ErrInvalidValue
+	}
+	if aAvailable < 0 {
+		return nil, ErrInvalidAvailable
+	}
+
+	bev := &Beverage{ID: strconv.FormatInt(time.Now().UnixNano(), 10), Name: aName, Value: aValue, Available: aAvailable}
 	service.perms.SetPermission(bev.ID, userID, permissions.CRUD, true)
 
-	if err := service.bevRepo.Write(collectionName, bev.ID, bev); err != nil {
+	if err := service.bevRepo.SaveInstance(bev); err != nil {
 		return nil, err
 	}
 
@@ -94,6 +97,16 @@ func (service *BeverageService) UpdateBeverage(bevID, userID, aName string, aVal
 		return nil, ErrNoPermission
 	}
 
+	if aName == "" {
+		return nil, ErrInvalidName
+	}
+	if aValue < 0 {
+		return nil, ErrInvalidValue
+	}
+	if aAvailable < 0 {
+		return nil, ErrInvalidAvailable
+	}
+
 	bev, err := service.GetBeverage(bevID, userID)
 	if err != nil {
 		return nil, err
@@ -102,7 +115,7 @@ func (service *BeverageService) UpdateBeverage(bevID, userID, aName string, aVal
 	bev.Value = aValue
 	bev.Available = aAvailable
 
-	err = service.bevRepo.Write(collectionName, bevID, bev)
+	err = service.bevRepo.SaveInstance(bev)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +133,7 @@ func (service *BeverageService) DeleteBeverage(bevID, userID string) error {
 	if !ok {
 		return ErrNoPermission
 	}
-	err = service.bevRepo.Delete(collectionName, bevID)
+	err = service.bevRepo.DeleteInstance(bevID)
 	if err != nil {
 		return err
 	}
@@ -128,8 +141,7 @@ func (service *BeverageService) DeleteBeverage(bevID, userID string) error {
 	return nil
 }
 
-var ErrNoPermission = errors.New("No permission for action set")
-
+//GivePermissionToUser gives the newOwner the permissions
 func (service *BeverageService) GivePermissionToUser(bevID, ownerID, newOwnerID string, perm permissions.PermissionType) error {
 	ok, err := service.perms.CheckPermissionAny(bevID, ownerID, permissions.Update, permissions.CRUD)
 	if err != nil {

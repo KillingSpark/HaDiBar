@@ -12,3 +12,4 @@ EXPOSE 8080/tcp
 
 ENTRYPOINT ["./hadibar"]
 VOLUME /app/data
+VOLUME /app/sockets

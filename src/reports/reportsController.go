@@ -6,14 +6,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/killingspark/hadibar/permissions"
-
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/accounts"
-	"github.com/killingspark/hadibar/authStuff"
-	"github.com/killingspark/hadibar/beverages"
-	"github.com/killingspark/hadibar/restapi"
-	"github.com/killingspark/hadibar/settings"
+	"github.com/killingspark/hadibar/src/accounts"
+	"github.com/killingspark/hadibar/src/authStuff"
+	"github.com/killingspark/hadibar/src/beverages"
+	"github.com/killingspark/hadibar/src/permissions"
+	"github.com/killingspark/hadibar/src/restapi"
 )
 
 type ReportsController struct {
@@ -21,12 +19,12 @@ type ReportsController struct {
 	accsrv *accounts.AccountService
 }
 
-func NewReportsController(perms *permissions.Permissions) (*ReportsController, error) {
-	bevsrv, err := beverages.NewBeverageService(settings.S.DataDir, perms)
+func NewReportsController(perms *permissions.Permissions, datadir string) (*ReportsController, error) {
+	bevsrv, err := beverages.NewBeverageService(datadir, perms)
 	if err != nil {
 		return nil, err
 	}
-	accsrv, err := accounts.NewAccountService(settings.S.DataDir, perms)
+	accsrv, err := accounts.NewAccountService(datadir, perms)
 	if err != nil {
 		return nil, err
 	}
@@ -129,9 +127,33 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 			return
 		}
 	}
-	accID := ctx.PostForm("accid")
+	accID := ctx.Query("accid")
+	fromDate := ctx.Query("from")
+	toDate := ctx.Query("to")
 
-	txs, err := rc.accsrv.GetTransactions(accID, info.Name)
+	var from, to *time.Time
+	if fromDate != "" {
+		x, err := time.Parse("2006-01-02", fromDate)
+		from = &x
+		if err != nil {
+			response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+	if toDate != "" {
+		x, err := time.Parse("2006-01-02", toDate)
+		to = &x
+		if err != nil {
+			response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
+			fmt.Fprint(ctx.Writer, string(response))
+			ctx.Abort()
+			return
+		}
+	}
+
+	txs, err := rc.accsrv.GetTransactions(accID, info.Name, from, to)
 	if err != nil {
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
@@ -141,6 +163,14 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 
 	idMap := make(map[string]string)
 	report := "<table><th>Source</th><th>Target</th><th>Amount</th><th>Time</th>"
+
+	type txListItem struct {
+		Source string
+		Target string
+		Amount int
+		Time   string
+	}
+	txList := make([]txListItem, 0)
 
 	sort.Slice(txs, func(i, j int) bool {
 		return txs[i].Timestamp.After(txs[j].Timestamp)
@@ -173,10 +203,11 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 			idMap[tx.TargetID] = acc.Owner.Name
 			trgtName = acc.Owner.Name
 		}
-		report += makeTransactionRow(srcName, trgtName, tx.Amount, tx.Timestamp.Format(time.UnixDate))
+		report += makeTransactionRow(srcName, trgtName, tx.Amount, tx.Timestamp.Format(time.RFC3339))
+		txList = append(txList, txListItem{Source: srcName, Target: trgtName, Amount: tx.Amount, Time: tx.Timestamp.Format(time.RFC3339)})
 	}
 	report += "</table>"
-	response, _ := restapi.NewOkResponse(report).Marshal()
+	response, _ := restapi.NewOkResponse(txList).Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
 }

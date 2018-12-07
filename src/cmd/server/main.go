@@ -1,20 +1,20 @@
 package main
 
 import (
-	"net/http"
-
 	"log"
-
-	"strconv"
+	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/accounts"
-	"github.com/killingspark/hadibar/authStuff"
-	"github.com/killingspark/hadibar/beverages"
-	"github.com/killingspark/hadibar/logger"
-	"github.com/killingspark/hadibar/permissions"
-	"github.com/killingspark/hadibar/reports"
-	"github.com/killingspark/hadibar/settings"
+	"github.com/killingspark/hadibar/src/accounts"
+	"github.com/killingspark/hadibar/src/admin"
+	"github.com/killingspark/hadibar/src/authStuff"
+	"github.com/killingspark/hadibar/src/beverages"
+	"github.com/killingspark/hadibar/src/logger"
+	"github.com/killingspark/hadibar/src/permissions"
+	"github.com/killingspark/hadibar/src/reports"
+
+	"github.com/spf13/viper"
 )
 
 //making routes seperate for better readability
@@ -52,9 +52,17 @@ func makeLoginRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {
 	//used to get an initial session id if wished
 	router.GET("/session/getid", lc.NewSession)
 }
+func makeUserUpdateRoutes(router *gin.RouterGroup, lc *authStuff.LoginController) {
+	router.POST("/user/email", lc.SetEmail)
+	router.GET("/user/info", lc.GetUser)
+}
 
 func main() {
-	settings.ReadSettings()
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("$HOME/.config/hadibar/")
+	viper.AddConfigPath("/etc/hadibar")
+	viper.SetConfigName("settings")
+	viper.ReadInConfig()
 	startServer()
 }
 
@@ -63,37 +71,57 @@ func startServer() {
 	router := gin.New()
 
 	//serves the wepapp folder as /app
-	router.StaticFS(settings.S.WebappRoute, http.Dir(settings.S.WebappPath))
+	router.StaticFS(viper.GetString("WebAppRoute"), http.Dir(viper.GetString("WebAppDir")))
 
 	//redirect users from / to /app
 	router.GET("/", func(ctx *gin.Context) {
-		ctx.Redirect(300, settings.S.WebappRoute)
+		ctx.Redirect(300, viper.GetString("WebAppRoute"))
 	})
 
-	auth, err := authStuff.NewAuth()
+	auth, err := authStuff.NewAuth(viper.GetString("DataDir"), viper.GetInt("SessionTTL"))
 	if err != nil {
 		panic(err.Error())
 	}
 
-	perms, err := permissions.NewPermissions(settings.S.DataDir)
+	perms, err := permissions.NewPermissions(viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
 
-	bc, err := beverages.NewBeverageController(perms)
+	bc, err := beverages.NewBeverageController(perms, viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
-	ac, err := accounts.NewAccountController(perms)
+	ac, err := accounts.NewAccountController(perms, viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
+
 	lc := authStuff.NewLoginController(auth)
 
-	rc, err := reports.NewReportsController(perms)
+	rc, err := reports.NewReportsController(perms, viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
+
+	ur, err := authStuff.NewUserRepo(viper.GetString("DataDir"))
+	if err != nil {
+		panic(err.Error())
+	}
+	br, err := beverages.NewBeverageRepo(viper.GetString("DataDir"))
+	if err != nil {
+		panic(err.Error())
+	}
+	ar, err := accounts.NewAccountRepo(viper.GetString("DataDir"))
+	if err != nil {
+		panic(err.Error())
+	}
+	os.Remove(viper.GetString("SocketPath"))
+	as, err := admin.NewAdminServer(viper.GetString("SocketPath"), ur, ar, br, perms)
+	if err != nil {
+		panic(err.Error())
+	}
+	go as.StartAccepting()
 
 	//router.Use(sessMan.CheckSession)
 	apiGroup := router.Group("/api")
@@ -105,6 +133,7 @@ func startServer() {
 	makeAccountRoutes(floorSpecificGroup, ac)
 	makeReportRoutes(floorSpecificGroup, rc)
 	makeLoginRoutes(apiGroup, lc)
+	makeUserUpdateRoutes(floorSpecificGroup, lc)
 
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(settings.S.Port), router))
+	log.Fatal(http.ListenAndServe(":"+viper.GetString("Port"), router))
 }

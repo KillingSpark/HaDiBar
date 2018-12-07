@@ -6,46 +6,75 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/logger"
-	"github.com/killingspark/hadibar/restapi"
-	"github.com/killingspark/hadibar/settings"
+	"github.com/killingspark/hadibar/src/logger"
+	"github.com/killingspark/hadibar/src/restapi"
 )
 
-//Entity (s) represent owners of an Account
+//LoginInfo is passed into the context if the session has a logged in user
 type LoginInfo struct {
-	Name     string
-	LoggedIn bool
-	Salt     string
-	Pwhash   string
+	Name      string
+	LoggedIn  bool
+	Salt      string
+	Pwhash    string
+	LastLogin time.Time
+	Email     string
 }
 
+//Authentikator is an interface that will allow for other sign-in methods later
 type Authentikator interface {
 	isValid(id, pw string) (*LoginInfo, error)
 }
 
+//Session identifies a session with a Client. If the client logs in, the session remembers the login info (without the password of course) until the client logs out.
 type Session struct {
-	id   string
-	info *LoginInfo
+	id         string
+	info       *LoginInfo
+	lastAction time.Time
 }
 
+//Auth maps session ids to sessions
 type Auth struct {
 	sessionMap map[string](*Session)
-	tester     Authentikator
+	sessionTTL time.Duration
+	ls         *LoginService
 }
 
-func NewAuth() (*Auth, error) {
+//NewAuth is a constructor for Auth
+func NewAuth(datadir string, sessionTTL int) (*Auth, error) {
 	auth := &Auth{}
+	auth.sessionTTL = time.Duration(sessionTTL) * time.Second
 	auth.sessionMap = make(map[string](*Session))
 	var err error
-	auth.tester, err = NewLoginService(settings.S.DataDir)
+	auth.ls, err = NewLoginService(datadir)
 	if err != nil {
 		return nil, err
 	}
+	go auth.cleanSessions()
 	return auth, nil
 }
 
+func (auth *Auth) cleanSessions() {
+	if auth.sessionTTL <= 0 {
+		return
+	}
+	for {
+		time.Sleep(1 * time.Minute)
+		for key, ses := range auth.sessionMap {
+			toRemove := make([]string, 0)
+			if ses.lastAction.Add(auth.sessionTTL).Before(time.Now()) {
+				toRemove = append(toRemove, key)
+			}
+			for _, key := range toRemove {
+				delete(auth.sessionMap, key)
+			}
+		}
+	}
+}
+
+//AddNewSession creates a new sessionid and remembers the session for later reference by the client
 func (auth *Auth) AddNewSession() string {
 	ID := make([]byte, 32)
 	if _, err := io.ReadFull(rand.Reader, ID); err != nil {
@@ -53,15 +82,16 @@ func (auth *Auth) AddNewSession() string {
 	}
 	encID := base64.URLEncoding.EncodeToString(ID)
 
-	session := Session{id: encID}
+	session := Session{id: encID, lastAction: time.Now()}
 	auth.sessionMap[encID] = &session
 	return session.id
 }
 
 var ErrAlreadyLoggedIn = errors.New("Already logged in")
 
-func (auth *Auth) LogIn(id, name, password string) error {
-	session, ok := auth.sessionMap[id]
+//LogIn checks the credentials against the authentikator and marks the session as loggedin
+func (auth *Auth) LogIn(sesID, name, password string) error {
+	session, ok := auth.sessionMap[sesID]
 	if !ok {
 		return ErrInvalidSession
 	}
@@ -70,7 +100,7 @@ func (auth *Auth) LogIn(id, name, password string) error {
 		return ErrAlreadyLoggedIn
 	}
 
-	newinfo, err := auth.tester.isValid(name, password)
+	newinfo, err := auth.ls.isValid(name, password)
 
 	if err != nil {
 		return err
@@ -82,6 +112,7 @@ func (auth *Auth) LogIn(id, name, password string) error {
 	return nil
 }
 
+//GetSessionInfo maps the sessionid to the LoginInfo
 func (auth *Auth) GetSessionInfo(id string) (*LoginInfo, error) {
 	session, err := auth.getSession(id)
 	if err != nil {
@@ -92,6 +123,7 @@ func (auth *Auth) GetSessionInfo(id string) (*LoginInfo, error) {
 
 var ErrInvalidSession = errors.New("Session not valid")
 
+//LogOut clears the LoginInfo of this session
 func (auth *Auth) LogOut(id string) error {
 	session, ok := auth.sessionMap[id]
 	if !ok {
@@ -102,7 +134,7 @@ func (auth *Auth) LogOut(id string) error {
 	return nil
 }
 
-//CheckSession checks if the token is valid and then executes the given handle
+//CheckSession checks if the sessionID is valid. If no sessionID is given, a new one is created and added as a header
 func (auth *Auth) CheckSession(ctx *gin.Context) {
 	var sessionID = ctx.Request.Header.Get("sessionID")
 
@@ -117,6 +149,7 @@ func (auth *Auth) CheckSession(ctx *gin.Context) {
 	ctx.Writer.Header().Set("sessionID", sessionID)
 	session, err := auth.getSession(sessionID)
 	if err == nil {
+		session.lastAction = time.Now()
 		ctx.Set("session", session)
 		ctx.Next()
 	} else {
@@ -157,4 +190,19 @@ func (auth *Auth) getSession(id string) (*Session, error) {
 		return session, nil
 	}
 	return nil, ErrInvalidSession
+}
+
+//GetLoginInfoFromCtx : Utility function for other controllers to get the LoginInfo from their Context
+func GetLoginInfoFromCtx(ctx *gin.Context) (*LoginInfo, error) {
+	var info *LoginInfo
+
+	if inter, ok := ctx.Get("logininfo"); ok {
+		info, ok = inter.(*LoginInfo)
+		if !ok {
+			return nil, errors.New("Not a LoginInfo while expecting LoginInfo. This is an internal misbehaviour. Contact an admin about this")
+		}
+	} else {
+		return nil, errors.New("No Login-Info found. Try to log in again")
+	}
+	return info, nil
 }
