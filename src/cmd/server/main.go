@@ -63,11 +63,13 @@ func main() {
 	viper.AddConfigPath("/etc/hadibar")
 	viper.SetConfigName("settings")
 	viper.ReadInConfig()
+
+	logger.PrepareLoggerFromViper()
+
 	startServer()
 }
 
 func startServer() {
-	logger.PrepareLogger()
 	router := gin.New()
 
 	//serves the wepapp folder as /app

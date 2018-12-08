@@ -8,8 +8,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/src/logger"
 	"github.com/killingspark/hadibar/src/restapi"
 )
 
@@ -139,10 +139,10 @@ func (auth *Auth) CheckSession(ctx *gin.Context) {
 	var sessionID = ctx.Request.Header.Get("sessionID")
 
 	if sessionID == "" {
-		logger.Logger.Debug("no session header found. Adding new one")
+		log.WithFields(log.Fields{}).Debug("No session header found. Adding new one")
 		sessionID = auth.AddNewSession()
 	} else {
-		logger.Logger.Debug("call from session: " + sessionID + " to URL: " + ctx.Request.URL.RawPath)
+		log.WithFields(log.Fields{"session": sessionID, "URL": ctx.Request.URL.String()}).Debug("Checked sessionid")
 	}
 
 	//headers get written by gin
@@ -153,7 +153,7 @@ func (auth *Auth) CheckSession(ctx *gin.Context) {
 		ctx.Set("session", session)
 		ctx.Next()
 	} else {
-		logger.Logger.Warning(err.Error())
+		log.WithFields(log.Fields{"session": sessionID, "Error": err.Error()}).Warn("Search SessionID error")
 		response, _ := restapi.NewErrorResponse("No valid session").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
@@ -172,11 +172,11 @@ func (auth *Auth) CheckLoginStatus(ctx *gin.Context) {
 		return
 	}
 	if session.info != nil && session.info.LoggedIn {
-		logger.Logger.Debug("Logincheck good for: " + sessionID)
+		log.WithFields(log.Fields{"session": sessionID}).Debug("Login check good")
 		ctx.Set("logininfo", session.info)
 		ctx.Next()
 	} else {
-		logger.Logger.Warning("Logincheck bad for: " + sessionID)
+		log.WithFields(log.Fields{"session": sessionID, "URL": ctx.Request.URL.String()}).Warn("Login check bad")
 		response, _ := restapi.NewErrorResponse("You must be logged in here").Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()

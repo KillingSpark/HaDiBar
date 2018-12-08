@@ -5,6 +5,7 @@ import (
 
 	"strconv"
 
+	"github.com/apex/log"
 	"github.com/gin-gonic/gin"
 
 	"github.com/killingspark/hadibar/src/authStuff"
@@ -40,19 +41,15 @@ func (controller *BeverageController) GetBeverages(ctx *gin.Context) {
 
 	bevs, err := controller.service.GetBeverages(info.Name)
 	if err != nil {
+		log.WithFields(log.Fields{"user": info.Name}).WithError(err).Error("Beverage Error GetAll")
+
 		errResp, _ := restapi.NewErrorResponse("Couldnt get the beverage array").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
 		return
 	}
 
-	response, err := restapi.NewOkResponse(bevs).Marshal()
-	if err != nil {
-		errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage array").Marshal()
-		fmt.Fprint(ctx.Writer, string(errResp))
-		ctx.Abort()
-		return
-	}
+	response, _ := restapi.NewOkResponse(bevs).Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
 }
@@ -69,6 +66,8 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
+		log.WithFields(log.Fields{"URL": ctx.Request.URL.String()}).Warn("No ID found in query")
+
 		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -77,16 +76,12 @@ func (controller *BeverageController) GetBeverage(ctx *gin.Context) {
 
 	bev, err := controller.service.GetBeverage(ID, info.Name)
 	if err == nil {
-		response, err := restapi.NewOkResponse(bev).Marshal()
-		if err != nil {
-			errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage object").Marshal()
-			fmt.Fprint(ctx.Writer, string(errResp))
-			ctx.Abort()
-			return
-		}
+		response, _ := restapi.NewOkResponse(bev).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Next()
 	} else {
+		log.WithFields(log.Fields{"user": info.Name}).WithError(err).Error("Beverage Error Get")
+
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
@@ -106,6 +101,8 @@ func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 
 	nv, err := strconv.Atoi(ctx.PostForm("value"))
 	if err != nil {
+		log.WithFields(log.Fields{"URL": ctx.Request.URL.String()}).Warn("No int value found in postform")
+
 		errResp, _ := restapi.NewErrorResponse("Invalid value").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -114,6 +111,8 @@ func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 
 	na, err := strconv.Atoi(ctx.PostForm("available"))
 	if err != nil {
+		log.WithFields(log.Fields{"URL": ctx.Request.URL.String()}).Warn("No int \"available\" found in postform")
+
 		errResp, _ := restapi.NewErrorResponse("Invalid available").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -122,18 +121,14 @@ func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 
 	nb, err := controller.service.NewBeverage(info.Name, ctx.PostForm("name"), nv, na)
 	if err != nil {
+		log.WithFields(log.Fields{"user": info.Name}).WithError(err).Error("Beverage Error New")
+
 		errResp, _ := restapi.NewErrorResponse("Couldnt save new beverage: " + err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
 		return
 	}
-	response, err := restapi.NewOkResponse(nb).Marshal()
-	if err != nil {
-		errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage object").Marshal()
-		fmt.Fprint(ctx.Writer, string(errResp))
-		ctx.Abort()
-		return
-	}
+	response, _ := restapi.NewOkResponse(nb).Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
 }
@@ -142,6 +137,8 @@ func (controller *BeverageController) NewBeverage(ctx *gin.Context) {
 func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
+		log.WithFields(log.Fields{"URL": ctx.Request.URL.String()}).Warn("No ID found in query")
+
 		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -150,6 +147,8 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 
 	nv, err := strconv.Atoi(ctx.PostForm("value"))
 	if err != nil {
+		log.WithFields(log.Fields{"URL": ctx.Request.URL.String()}).Warn("No int value found in postform")
+
 		errResp, _ := restapi.NewErrorResponse("Invalid value").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -157,6 +156,8 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 	}
 	na, err := strconv.Atoi(ctx.PostForm("available"))
 	if err != nil {
+		log.WithFields(log.Fields{"URL": ctx.Request.URL.String()}).Warn("No int \"available\" found in postform")
+
 		errResp, _ := restapi.NewErrorResponse("Invalid available").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -174,19 +175,15 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 
 	nb, err := controller.service.UpdateBeverage(ID, info.Name, nn, nv, na)
 	if err != nil {
+		log.WithFields(log.Fields{"user": info.Name}).WithError(err).Error("Beverage Error Update")
+
 		errResp, _ := restapi.NewErrorResponse("Couldnt update beverage: " + err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
 		return
 	}
 
-	response, err := restapi.NewOkResponse(nb).Marshal()
-	if err != nil {
-		errResp, _ := restapi.NewErrorResponse("Couldnt marshal the beverage object").Marshal()
-		fmt.Fprint(ctx.Writer, string(errResp))
-		ctx.Abort()
-		return
-	}
+	response, _ := restapi.NewOkResponse(nb).Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
 }
@@ -195,6 +192,8 @@ func (controller *BeverageController) UpdateBeverage(ctx *gin.Context) {
 func (controller *BeverageController) GivePermissionToUser(ctx *gin.Context) {
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
+		log.WithFields(log.Fields{"URL": ctx.Request.URL.String()}).Warn("No ID found in query")
+
 		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -203,6 +202,8 @@ func (controller *BeverageController) GivePermissionToUser(ctx *gin.Context) {
 
 	newowner := ctx.PostForm("newowner")
 	if newowner == "" {
+		log.WithFields(log.Fields{"URL": ctx.Request.URL.String()}).Warn("No newowner found in postform")
+
 		errResp, _ := restapi.NewErrorResponse("No newowner given").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -219,6 +220,8 @@ func (controller *BeverageController) GivePermissionToUser(ctx *gin.Context) {
 
 	err = controller.service.GivePermissionToUser(ID, info.Name, newowner, permissions.CRUD)
 	if err != nil {
+		log.WithFields(log.Fields{"user": info.Name}).WithError(err).Error("Beverage Error GivePermission")
+
 		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
@@ -233,6 +236,8 @@ func (controller *BeverageController) GivePermissionToUser(ctx *gin.Context) {
 func (controller *BeverageController) DeleteBeverage(ctx *gin.Context) {
 	ID, ok := ctx.GetQuery("id")
 	if !ok {
+		log.WithFields(log.Fields{"URL": ctx.Request.URL.String()}).Warn("No ID found in query")
+
 		errResp, _ := restapi.NewErrorResponse("No ID given").Marshal()
 		fmt.Fprint(ctx.Writer, string(errResp))
 		ctx.Abort()
@@ -252,6 +257,8 @@ func (controller *BeverageController) DeleteBeverage(ctx *gin.Context) {
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Next()
 	} else {
+		log.WithFields(log.Fields{"user": info.Name}).WithError(err).Error("Beverage Error Delete")
+
 		response, _ := restapi.NewErrorResponse("Coulnt delete the beverage: " + err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()

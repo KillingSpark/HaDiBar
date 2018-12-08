@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/killingspark/hadibar/src/accounts"
 	"github.com/killingspark/hadibar/src/authStuff"
 	"github.com/killingspark/hadibar/src/beverages"
@@ -122,12 +123,14 @@ func (as *AdminServer) handleCon(con net.Conn) {
 		case "clean":
 			io.Copy(con, bytes.NewBuffer(as.cleanUpOrphaned()))
 		default:
-			println("Unknown command type received on the unix socket: " + cmd.Type)
+			log.WithFields(log.Fields{"cmd": strings.ToLower(cmd.Type)}).Warn("Unknown command")
 		}
 	}
 }
 
 func (as *AdminServer) listTransactions(cmd *ListTransactionssCommand) []byte {
+	log.WithFields(log.Fields{"cmd": "listtxs", "from": cmd.From.String(), "to": cmd.To.String(), "ID1": cmd.ID1, "ID2": cmd.ID2}).Debug("Command received")
+
 	txs, err := as.ar.GetTransactions()
 	if err != nil {
 		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
@@ -150,6 +153,8 @@ func (as *AdminServer) listTransactions(cmd *ListTransactionssCommand) []byte {
 }
 
 func (as *AdminServer) doBackup(cmd *PerformBackupCommand) []byte {
+	log.WithFields(log.Fields{"cmd": "backup", "path": cmd.Path}).Debug("Command received")
+
 	bkpPath := cmd.Path
 	if bkpPath == "" {
 		return []byte(`{"Result": "Err", "Text": "No path given"}`)
@@ -178,6 +183,8 @@ func (as *AdminServer) doBackup(cmd *PerformBackupCommand) []byte {
 }
 
 func (as *AdminServer) cleanUpOrphaned() []byte {
+	log.WithFields(log.Fields{"cmd": "clean"}).Debug("Command received")
+
 	perms, err := as.perm.GetAllAsMap()
 	if err != nil {
 		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
@@ -214,6 +221,8 @@ func (as *AdminServer) cleanUpOrphaned() []byte {
 }
 
 func (as *AdminServer) deleteUser(cmd *DeleteUserCommand) []byte {
+	log.WithFields(log.Fields{"cmd": "deleteuser", "name": cmd.Name}).Debug("Command received")
+
 	println("delete: " + cmd.Name)
 	err := as.ur.DeleteInstance(cmd.Name)
 	if err != nil {
@@ -225,6 +234,8 @@ func (as *AdminServer) deleteUser(cmd *DeleteUserCommand) []byte {
 }
 
 func (as *AdminServer) listUsers(cmd *ListUsersCommand) []byte {
+	log.WithFields(log.Fields{"cmd": "listusers"}).Debug("Command received")
+
 	users, err := as.ur.GetAllUsers()
 	if err != nil {
 		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
@@ -237,6 +248,8 @@ func (as *AdminServer) listUsers(cmd *ListUsersCommand) []byte {
 }
 
 func (as *AdminServer) listAccs(cmd *ListAccountsCommand) []byte {
+	log.WithFields(log.Fields{"cmd": "listaccs"}).Debug("Command received")
+
 	accs, err := as.ar.GetAllAccounts()
 	if err != nil {
 		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
@@ -266,6 +279,8 @@ func (as *AdminServer) listAccs(cmd *ListAccountsCommand) []byte {
 }
 
 func (as *AdminServer) listBevs(cmd *ListBeveragesCommand) []byte {
+	log.WithFields(log.Fields{"cmd": "listbevs"}).Debug("Command received")
+
 	bevs, err := as.br.GetAllBeverages()
 	if err != nil {
 		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
