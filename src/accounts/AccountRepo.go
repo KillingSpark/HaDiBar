@@ -8,13 +8,15 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 var globdb *bolt.DB
 
 type AccountRepo struct {
-	db *bolt.DB
+	db   *bolt.DB
+	Lock sync.RWMutex
 }
 
 var bucketName = "accounts"
@@ -52,6 +54,9 @@ func (ar *AccountRepo) BackupTo(bkpDest string) error {
 }
 
 func (ar *AccountRepo) GetAllAccounts() ([]*Account, error) {
+	ar.Lock.RLock()
+	defer ar.Lock.RUnlock()
+
 	var res []*Account
 	err := ar.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
@@ -73,6 +78,9 @@ func (ar *AccountRepo) GetAllAccounts() ([]*Account, error) {
 }
 
 func (ar *AccountRepo) SaveInstance(acc *Account) error {
+	ar.Lock.Lock()
+	defer ar.Lock.Unlock()
+
 	err := ar.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		marshed, err := json.Marshal(acc)
@@ -87,6 +95,9 @@ func (ar *AccountRepo) SaveInstance(acc *Account) error {
 var ErrAccountDoesNotExist = errors.New("Account with this id does not exist")
 
 func (ar *AccountRepo) GetInstance(accID string) (*Account, error) {
+	ar.Lock.RLock()
+	defer ar.Lock.RUnlock()
+
 	var acc Account
 	err := ar.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
@@ -103,6 +114,9 @@ func (ar *AccountRepo) GetInstance(accID string) (*Account, error) {
 }
 
 func (ar *AccountRepo) DeleteInstance(accID string) error {
+	ar.Lock.Lock()
+	defer ar.Lock.Unlock()
+
 	err := ar.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		b.Delete([]byte(accID))
@@ -116,6 +130,9 @@ func getPageName(t *time.Time) string {
 }
 
 func (ar *AccountRepo) SaveTransaction(trans *Transaction) error {
+	ar.Lock.Lock()
+	defer ar.Lock.Unlock()
+
 	err := ar.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketNameTrans))
 		pageName := getPageName(&trans.Timestamp)
@@ -134,10 +151,14 @@ func (ar *AccountRepo) SaveTransaction(trans *Transaction) error {
 }
 
 func (ar *AccountRepo) GetTransactions() ([]*Transaction, error) {
+	ar.Lock.RLock()
+	defer ar.Lock.RUnlock()
 	return ar.GetTransactionsPages(nil, nil)
 }
 
 func (ar *AccountRepo) GetTransactionsPages(from, to *time.Time) ([]*Transaction, error) {
+	ar.Lock.RLock()
+	defer ar.Lock.RUnlock()
 	firstPageName := "0000-00"
 	lastpagename := "9999-99"
 	if from != nil {

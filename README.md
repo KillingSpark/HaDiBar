@@ -22,3 +22,18 @@ Testlogin:
     export SES="$(curl -X GET 127.0.0.1:8080/api/session/getid)"
     curl -X POST 127.0.0.1:8080/api/session/login -H "sessionID: "$SES --form "name=Moritz" --form "password=test"
 ```
+
+## Admin Server
+The admin-server is a JSON based access that allows to manage all things. There is support for 
+1. listing/removing users
+1. listing accounts
+1. listing beverages
+1. perform backups
+
+The most comfortable way is probably to use the admin-client in the cmd directory
+
+Example for performing backups and put them in a directory with the current date
+
+```
+go run src/cmd/admin-client/main.go -s sockets/control.socket backup "backups/$(date -u +"%Y-%m-%d__%H:%M:%S")"
+```

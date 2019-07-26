@@ -163,6 +163,15 @@ func (as *AdminServer) doBackup(cmd *PerformBackupCommand) []byte {
 	if err != nil {
 		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)
 	}
+
+	//Lock all repos before doing anything
+	as.ur.Lock.RLock()
+	defer as.ur.Lock.RUnlock()
+	as.br.Lock.RLock()
+	defer as.ur.Lock.RUnlock()
+	as.ar.Lock.RLock()
+	defer as.ur.Lock.RUnlock()
+
 	err = as.ur.BackupTo(path.Join(bkpPath, "users.bolt"))
 	if err != nil {
 		return []byte(`{"Result": "Err", "Text":"` + err.Error() + `"}`)

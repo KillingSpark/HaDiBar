@@ -6,12 +6,14 @@ import (
 	"github.com/boltdb/bolt"
 	"os"
 	"path"
+	"sync"
 )
 
 var globdb *bolt.DB
 
 type BeverageRepo struct {
-	db *bolt.DB
+	db   *bolt.DB
+	Lock sync.RWMutex
 }
 
 var bucketName = "beverages"
@@ -47,6 +49,9 @@ func (br *BeverageRepo) BackupTo(bkpDest string) error {
 }
 
 func (ar *BeverageRepo) GetAllBeverages() ([]*Beverage, error) {
+	ar.Lock.RLock()
+	defer ar.Lock.RUnlock()
+
 	var res []*Beverage
 	err := ar.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
@@ -68,6 +73,9 @@ func (ar *BeverageRepo) GetAllBeverages() ([]*Beverage, error) {
 }
 
 func (ar *BeverageRepo) SaveInstance(bev *Beverage) error {
+	ar.Lock.Lock()
+	defer ar.Lock.Unlock()
+
 	err := ar.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		marshed, err := json.Marshal(bev)
@@ -82,6 +90,9 @@ func (ar *BeverageRepo) SaveInstance(bev *Beverage) error {
 var ErrBeverageDoesNotExist = errors.New("Beverage with this id does not exist")
 
 func (ar *BeverageRepo) GetInstance(bevID string) (*Beverage, error) {
+	ar.Lock.RLock()
+	defer ar.Lock.RUnlock()
+
 	var bev Beverage
 	err := ar.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
@@ -98,6 +109,9 @@ func (ar *BeverageRepo) GetInstance(bevID string) (*Beverage, error) {
 }
 
 func (ar *BeverageRepo) DeleteInstance(bevID string) error {
+	ar.Lock.Lock()
+	defer ar.Lock.Unlock()
+
 	err := ar.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		b.Delete([]byte(bevID))

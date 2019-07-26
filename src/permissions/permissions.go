@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"sync"
 
 	"github.com/boltdb/bolt"
 )
@@ -32,6 +33,7 @@ var (
 type Permissions struct {
 	db                *bolt.DB
 	defaultPermission bool
+	Lock              sync.RWMutex
 }
 
 var globdb *bolt.DB
@@ -62,6 +64,9 @@ func (p *Permissions) BackupTo(bkpDest string) error {
 }
 
 func (p *Permissions) RemoveUsersPermissions(usrID string) error {
+	p.Lock.Lock()
+	defer p.Lock.Unlock()
+
 	err := p.db.Update(func(tx *bolt.Tx) error {
 		err := tx.DeleteBucket([]byte(usrID))
 		return err
@@ -70,6 +75,9 @@ func (p *Permissions) RemoveUsersPermissions(usrID string) error {
 }
 
 func (p *Permissions) GetAllAsMap() (map[string](map[string](map[PermissionType]bool)), error) {
+	p.Lock.RLock()
+	defer p.Lock.RUnlock()
+
 	res := make(map[string](map[string](map[PermissionType]bool)))
 	err := p.db.View(func(tx *bolt.Tx) error {
 		usrc := tx.Cursor()
@@ -92,6 +100,9 @@ func (p *Permissions) GetAllAsMap() (map[string](map[string](map[PermissionType]
 }
 
 func (p *Permissions) SetPermission(objID, usrID string, permission PermissionType, value bool) error {
+	p.Lock.Lock()
+	defer p.Lock.Unlock()
+
 	err := p.db.Update(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists([]byte(usrID))
 		if err != nil {
@@ -112,6 +123,9 @@ func (p *Permissions) SetPermission(objID, usrID string, permission PermissionTy
 }
 
 func (p *Permissions) DeletePermission(objID, usrID string, permission PermissionType) error {
+	p.Lock.Lock()
+	defer p.Lock.Unlock()
+
 	err := p.db.Update(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists([]byte(usrID))
 		if err != nil {
@@ -128,6 +142,8 @@ func (p *Permissions) DeletePermission(objID, usrID string, permission Permissio
 }
 
 func (p *Permissions) CheckPermissionAny(objID, usrID string, permissions ...PermissionType) (bool, error) {
+	p.Lock.RLock()
+	defer p.Lock.RUnlock()
 	result := false
 	err := p.db.Update(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists([]byte(usrID))
