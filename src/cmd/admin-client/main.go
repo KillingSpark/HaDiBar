@@ -21,6 +21,9 @@ var (
 	clean  = app.Command("clean", "Clean orphaned accounts and beverages")
 	lsusrs = app.Command("lsusrs", "List all user")
 
+	bckup     = app.Command("backup", "Backup databases")
+	bckuppath = bckup.Arg("dir", "Directory where the databases will be saved").String()
+
 	lsaccs        = app.Command("lsaccs", "List all accounts (and filter for a specific user)")
 	lsaccsusrName = lsaccs.Arg("name", "Name of the user for filtering").String()
 
@@ -62,6 +65,8 @@ func main() {
 		cmd = cmdWrap{Type: "listbevs", Cmd: admin.ListBeveragesCommand{Name: *lsbevsusrName}}
 	case lstxs.FullCommand():
 		cmd = cmdWrap{Type: "listtxs", Cmd: admin.ListTransactionssCommand{ID1: *txsID1, ID2: *txsID2}}
+	case bckup.FullCommand():
+		cmd = cmdWrap{Type: "backup", Cmd: admin.PerformBackupCommand{Path: *bckuppath}}
 	default:
 		println("unknown: " + command)
 		return

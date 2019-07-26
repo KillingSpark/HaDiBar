@@ -63,11 +63,13 @@ func main() {
 	viper.AddConfigPath("/etc/hadibar")
 	viper.SetConfigName("settings")
 	viper.ReadInConfig()
+
+	logger.PrepareLoggerFromViper()
+
 	startServer()
 }
 
 func startServer() {
-	logger.PrepareLogger()
 	router := gin.New()
 
 	//serves the wepapp folder as /app
@@ -78,7 +80,15 @@ func startServer() {
 		ctx.Redirect(300, viper.GetString("WebAppRoute"))
 	})
 
-	auth, err := authStuff.NewAuth(viper.GetString("DataDir"), viper.GetInt("SessionTTL"))
+	//////
+	// USERS
+	//////
+	usrRepo, err := authStuff.NewUserRepo(viper.GetString("DataDir"))
+	if err != nil {
+		panic(err.Error())
+	}
+
+	auth := authStuff.NewAuth(usrRepo, viper.GetInt("SessionTTL"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -88,40 +98,39 @@ func startServer() {
 		panic(err.Error())
 	}
 
-	bc, err := beverages.NewBeverageController(perms, viper.GetString("DataDir"))
-	if err != nil {
-		panic(err.Error())
-	}
-	ac, err := accounts.NewAccountController(perms, viper.GetString("DataDir"))
-	if err != nil {
-		panic(err.Error())
-	}
-
-	lc := authStuff.NewLoginController(auth)
-
-	rc, err := reports.NewReportsController(perms, viper.GetString("DataDir"))
-	if err != nil {
-		panic(err.Error())
-	}
-
-	ur, err := authStuff.NewUserRepo(viper.GetString("DataDir"))
-	if err != nil {
-		panic(err.Error())
-	}
+	//////
+	// BEVERAGES
+	//////
 	br, err := beverages.NewBeverageRepo(viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
-	ar, err := accounts.NewAccountRepo(viper.GetString("DataDir"))
+	bs := beverages.NewBeverageService(br, perms)
+	bc := beverages.NewBeverageController(bs)
+
+	//////
+	// ACCOUNTS
+	//////
+	acr, err := accounts.NewAccountRepo(viper.GetString("DataDir"))
 	if err != nil {
 		panic(err.Error())
 	}
+	acs := accounts.NewAccountService(acr, perms)
+	ac := accounts.NewAccountController(acs)
+
+	lc := authStuff.NewLoginController(auth)
+
+	rc := reports.NewReportsController(bs, acs)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	os.Remove(viper.GetString("SocketPath"))
-	as, err := admin.NewAdminServer(viper.GetString("SocketPath"), ur, ar, br, perms)
+	admnSrvr, err := admin.NewAdminServer(viper.GetString("SocketPath"), usrRepo, acr, br, perms)
 	if err != nil {
 		panic(err.Error())
 	}
-	go as.StartAccepting()
+	go admnSrvr.StartAccepting()
 
 	//router.Use(sessMan.CheckSession)
 	apiGroup := router.Group("/api")

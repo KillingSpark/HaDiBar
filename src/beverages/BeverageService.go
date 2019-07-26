@@ -23,15 +23,11 @@ var ErrInvalidAvailable = errors.New("Available needs to be a positive integers"
 var ErrInvalidName = errors.New("Name needs to be a nonempty string")
 
 //NewBeverageService creates a new Service
-func NewBeverageService(path string, perms *permissions.Permissions) (*BeverageService, error) {
+func NewBeverageService(repo *BeverageRepo, perms *permissions.Permissions) *BeverageService {
 	bs := &BeverageService{}
-	var err error
-	bs.bevRepo, err = NewBeverageRepo(path)
-	if err != nil {
-		return nil, err
-	}
+	bs.bevRepo = repo
 	bs.perms = perms
-	return bs, nil
+	return bs
 }
 
 //GetBeverages returns all existing beverages

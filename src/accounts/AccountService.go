@@ -20,15 +20,11 @@ var ErrInvalidName = errors.New("Name needs to be a nonempty string")
 var ErrTxSourceTargetSame = errors.New("The source and the target of the transaction is the same")
 
 //NewAccountService creates a AccountService and initializes the Data
-func NewAccountService(path string, perms *permissions.Permissions) (*AccountService, error) {
+func NewAccountService(repo *AccountRepo, perms *permissions.Permissions) *AccountService {
 	acs := &AccountService{}
-	var err error
-	acs.accRepo, err = NewAccountRepo(path)
-	if err != nil {
-		return nil, err
-	}
+	acs.accRepo = repo
 	acs.perms = perms
-	return acs, nil
+	return acs
 }
 
 //Adds a new Account and sets the permissions

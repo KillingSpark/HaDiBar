@@ -1,36 +1,50 @@
 package logger
 
 import (
+	"errors"
 	"os"
+	"path"
 
-	"strings"
-
-	logging "github.com/op/go-logging"
+	"github.com/apex/log"
+	"github.com/apex/log/handlers/logfmt"
+	"github.com/apex/log/handlers/text"
+	"github.com/natefinch/lumberjack"
 	"github.com/spf13/viper"
 )
 
-var (
-	//Logger is the global logger
-	Logger = logging.MustGetLogger("Debugging")
-	format = logging.MustStringFormatter(`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}`)
-)
+func PrepareLoggerStdout() {
+	log.SetLevel(log.DebugLevel)
+	log.SetHandler(text.New(os.Stderr))
+}
 
-//PrepareLogger puts a format and backend to the logger
-func PrepareLogger() {
-	formatted := logging.AddModuleLevel(logging.NewBackendFormatter(logging.NewLogBackend(os.Stdout, "", 0), format))
-	level := strings.ToUpper(viper.GetString("LoggingLevel"))
+func PrepareLoggerFromViper() error {
+	logdir := viper.GetString("LogDir")
+	size := viper.GetInt("LogMaxSize")
+	bkps := viper.GetInt("LogMaxBackups")
+	age := viper.GetInt("LogMaxAge")
+	cmprss := viper.GetBool("LogCompress")
 
-	switch level {
-	case "DEBUG":
-		formatted.SetLevel(logging.DEBUG, "debugging")
-	case "CRITICAL":
-		formatted.SetLevel(logging.CRITICAL, "critical")
-	case "ERROR":
-		formatted.SetLevel(logging.ERROR, "error")
-	case "WARNING":
-		formatted.SetLevel(logging.WARNING, "warning")
-	default:
-		formatted.SetLevel(logging.DEBUG, "debugging")
+	return PrepareLogger(logdir, size, age, bkps, cmprss)
+}
+
+func PrepareLogger(logdir string, size, backups, age int, compress bool) error {
+	if logdir == "" {
+		return errors.New("No logdir given")
 	}
-	logging.SetBackend(formatted)
+	if size == 0 {
+		return errors.New("No maxsize given")
+	}
+	if age == 0 {
+		return errors.New("No maxage given")
+	}
+
+	log.SetLevel(log.DebugLevel)
+	log.SetHandler(logfmt.New(&lumberjack.Logger{
+		Filename:   path.Join(logdir, "hadibar.log"),
+		MaxSize:    size,
+		MaxBackups: backups,
+		MaxAge:     age,
+		Compress:   compress,
+	}))
+	return nil
 }

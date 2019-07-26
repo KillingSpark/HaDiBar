@@ -3,8 +3,8 @@ package authStuff
 import (
 	"fmt"
 
+	"github.com/apex/log"
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/src/logger"
 	"github.com/killingspark/hadibar/src/restapi"
 )
 
@@ -37,12 +37,22 @@ func (controller *LoginController) SetEmail(ctx *gin.Context) {
 
 	info, err := GetLoginInfoFromCtx(ctx)
 	if err != nil {
-		response, _ := restapi.NewErrorResponse("No Logininfo found. This is an internl error that should never happen").Marshal()
+		response, _ := restapi.NewErrorResponse(err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
 		ctx.Abort()
 		return
 	}
-	controller.auth.ls.SetEmail(info.Name, email)
+
+	err = controller.auth.ls.SetEmail(info.Name, email)
+	if err != nil {
+		log.WithFields(log.Fields{"user": info.Name}).WithError(err).Error("User Error SetEmail")
+
+		response, _ := restapi.NewErrorResponse("Coulnt set the email: " + err.Error()).Marshal()
+		fmt.Fprint(ctx.Writer, string(response))
+		ctx.Abort()
+		return
+	}
+
 	response, _ := restapi.NewOkResponse("").Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 	ctx.Next()
@@ -78,13 +88,13 @@ func (controller *LoginController) Login(ctx *gin.Context) {
 	if err != nil {
 		response, _ := restapi.NewErrorResponse("credentials rejected: " + err.Error()).Marshal()
 		fmt.Fprint(ctx.Writer, string(response))
-		logger.Logger.Debug(sessionID + " failed to log in as: " + name)
+		log.WithFields(log.Fields{"session": sessionID, "name": name}).Warn("Failed to log in")
 		ctx.Abort()
 		return
 	}
 	response, _ := restapi.NewOkResponse("").Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
-	logger.Logger.Debug(sessionID + " logged in as: " + name)
+	log.WithFields(log.Fields{"session": sessionID, "name": name}).Debug("Logged in")
 	ctx.Next()
 }
 
@@ -95,6 +105,6 @@ func (controller *LoginController) LogOut(ctx *gin.Context) {
 	response, _ := restapi.NewOkResponse("").Marshal()
 	fmt.Fprint(ctx.Writer, string(response))
 
-	logger.Logger.Debug(sessionID + " logged out")
+	log.WithFields(log.Fields{"session": sessionID}).Debug("Logged out")
 	ctx.Next()
 }

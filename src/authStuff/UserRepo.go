@@ -6,12 +6,14 @@ import (
 	"github.com/boltdb/bolt"
 	"os"
 	"path"
+	"sync"
 )
 
 var globdb *bolt.DB
 
 type UserRepo struct {
-	db *bolt.DB
+	db   *bolt.DB
+	Lock sync.RWMutex
 }
 
 var bucketName = "users"
@@ -47,6 +49,9 @@ func (ur *UserRepo) BackupTo(bkpDest string) error {
 }
 
 func (ur *UserRepo) GetAllUsers() ([]*LoginInfo, error) {
+	ur.Lock.RLock()
+	defer ur.Lock.RUnlock()
+
 	var res []*LoginInfo
 	err := ur.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
@@ -68,6 +73,9 @@ func (ur *UserRepo) GetAllUsers() ([]*LoginInfo, error) {
 }
 
 func (ur *UserRepo) SaveInstance(info *LoginInfo) error {
+	ur.Lock.Lock()
+	defer ur.Lock.Unlock()
+
 	err := ur.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		marshed, err := json.Marshal(info)
@@ -82,6 +90,9 @@ func (ur *UserRepo) SaveInstance(info *LoginInfo) error {
 var ErrUserDoesNotExist = errors.New("User with this Name does not exist")
 
 func (ur *UserRepo) GetInstance(infoName string) (*LoginInfo, error) {
+	ur.Lock.RLock()
+	defer ur.Lock.RUnlock()
+
 	var info LoginInfo
 	err := ur.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
@@ -98,6 +109,9 @@ func (ur *UserRepo) GetInstance(infoName string) (*LoginInfo, error) {
 }
 
 func (ur *UserRepo) DeleteInstance(infoName string) error {
+	ur.Lock.Lock()
+	defer ur.Lock.Unlock()
+
 	err := ur.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		err := b.Delete([]byte(infoName))

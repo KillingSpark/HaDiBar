@@ -17,17 +17,12 @@ type LoginService struct {
 	hasher   hash.Hash
 }
 
-func NewLoginService(path string) (*LoginService, error) {
+func NewLoginService(usrRepo *UserRepo) *LoginService {
 	ls := &LoginService{}
 	ls.hasher = sha3.New256()
-	var err error
-	ls.userRepo, err = NewUserRepo(path)
+	ls.userRepo = usrRepo
 
-	if err != nil {
-		return nil, err
-	}
-
-	return ls, nil
+	return ls
 }
 
 var ErrUsernameTaken = errors.New("already exists")
