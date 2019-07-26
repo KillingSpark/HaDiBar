@@ -10,6 +10,10 @@ The Webapp also contains some conveniance functions capsulating the ajax-calls a
 Webapp made with Vuejs, JQuery and Bootstrap
 Accounts/Beverages/Users are stored in bolt key-value stores
 
+
+## General usecase
+This is meant for one person in a group of people to manage the accounts of all of them (in most cases that will be the one that manages the physical beverages as well). It is more of a convenient way of book keeping, not a way so that everyone is managing their own accounts.
+
 ## Users ##
 There is no explicit user management right now. Usernames are aquired by logging in with the name and the password for the first time.
 This will hopefully be improved in the future (with password-resets/registering with an email etc,etc)
