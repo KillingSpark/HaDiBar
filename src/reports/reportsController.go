@@ -10,7 +10,6 @@ import (
 	"github.com/killingspark/hadibar/src/accounts"
 	"github.com/killingspark/hadibar/src/authStuff"
 	"github.com/killingspark/hadibar/src/beverages"
-	"github.com/killingspark/hadibar/src/permissions"
 	"github.com/killingspark/hadibar/src/restapi"
 )
 
@@ -19,16 +18,8 @@ type ReportsController struct {
 	accsrv *accounts.AccountService
 }
 
-func NewReportsController(perms *permissions.Permissions, datadir string) (*ReportsController, error) {
-	bevsrv, err := beverages.NewBeverageService(datadir, perms)
-	if err != nil {
-		return nil, err
-	}
-	accsrv, err := accounts.NewAccountService(datadir, perms)
-	if err != nil {
-		return nil, err
-	}
-	return &ReportsController{bevsrv: bevsrv, accsrv: accsrv}, nil
+func NewReportsController(bevsrv *beverages.BeverageService, accsrv *accounts.AccountService) *ReportsController {
+	return &ReportsController{bevsrv: bevsrv, accsrv: accsrv}
 }
 
 func makeAccountTableRow(acc *accounts.Account) string {

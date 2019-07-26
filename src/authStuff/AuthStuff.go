@@ -43,17 +43,14 @@ type Auth struct {
 }
 
 //NewAuth is a constructor for Auth
-func NewAuth(datadir string, sessionTTL int) (*Auth, error) {
+func NewAuth(usrRepo *UserRepo, sessionTTL int) *Auth {
 	auth := &Auth{}
 	auth.sessionTTL = time.Duration(sessionTTL) * time.Second
 	auth.sessionMap = make(map[string](*Session))
-	var err error
-	auth.ls, err = NewLoginService(datadir)
-	if err != nil {
-		return nil, err
-	}
+
+	auth.ls = NewLoginService(usrRepo)
 	go auth.cleanSessions()
-	return auth, nil
+	return auth
 }
 
 func (auth *Auth) cleanSessions() {

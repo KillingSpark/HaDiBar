@@ -17,14 +17,10 @@ type AccountController struct {
 }
 
 //NewAccountController creates a new AccountController and initializes the service
-func NewAccountController(perms *permissions.Permissions, datadir string) (*AccountController, error) {
+func NewAccountController(accService *AccountService) *AccountController {
 	acC := &AccountController{}
-	var err error
-	acC.service, err = NewAccountService(datadir, perms)
-	if err != nil {
-		return nil, err
-	}
-	return acC, nil
+	acC.service = accService
+	return acC
 }
 
 //GetAccounts gets all existing accounts, that the logged in account is allowed to see

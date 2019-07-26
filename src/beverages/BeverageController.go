@@ -19,14 +19,10 @@ type BeverageController struct {
 }
 
 //NewBeverageController creates a new BeverageController and initializes its service
-func NewBeverageController(perms *permissions.Permissions, datadir string) (*BeverageController, error) {
+func NewBeverageController(bevService *BeverageService) *BeverageController {
 	bc := &BeverageController{}
-	var err error
-	bc.service, err = NewBeverageService(datadir, perms)
-	if err != nil {
-		return nil, err
-	}
-	return bc, nil
+	bc.service = bevService
+	return bc
 }
 
 //GetBeverages responds with all existing Beverages
