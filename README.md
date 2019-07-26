@@ -8,10 +8,10 @@ a reference implementation of a webapp that uses said API can be found at [Hadib
 The Webapp also contains some conveniance functions capsulating the ajax-calls and session management to use the api from javascript 
 
 Webapp made with Vuejs, JQuery and Bootstrap
-Accounts/Beverages/Users are stored in json files
+Accounts/Beverages/Users are stored in bolt key-value stores
 
 ## Users ##
-There is no explicit user management right now. Usernames are aquired by logging in with the name and the password for the firs time.
+There is no explicit user management right now. Usernames are aquired by logging in with the name and the password for the first time.
 This will hopefully be improved in the future (with password-resets/registering with an email etc,etc)
 
 ## Test the server without the webapp ##
@@ -24,8 +24,11 @@ Testlogin:
 ```
 
 ## Admin Server
-The admin-server is a JSON based access that allows to manage all things. There is support for 
+Besides the rest-api for the normal users there is an additional admin-server listening on a unix socket.
+
+The admin-server uses a JSON based PRC that allows to manage all things. There is support for 
 1. listing/removing users
+1. perform cleanup after deleting users
 1. listing accounts
 1. listing beverages
 1. perform backups
