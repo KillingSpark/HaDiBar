@@ -36,18 +36,13 @@ type Permissions struct {
 	Lock              sync.RWMutex
 }
 
-var globdb *bolt.DB
-
 func NewPermissions(dir string) (*Permissions, error) {
 	perm := &Permissions{}
 	var err error
-	if globdb == nil {
-		globdb, err = bolt.Open(path.Join(dir, "permissions.bolt"), 0600, nil)
-		if err != nil {
-			return nil, err
-		}
+	perm.db, err = bolt.Open(path.Join(dir, "permissions.bolt"), 0600, nil)
+	if err != nil {
+		return nil, err
 	}
-	perm.db = globdb
 	return perm, nil
 }
 
