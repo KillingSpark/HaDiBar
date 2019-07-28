@@ -80,10 +80,32 @@ func startServer() {
 		ctx.Redirect(300, viper.GetString("WebAppRoute"))
 	})
 
+	dataDir := viper.GetString("DataDir")
+	if stats, err := os.Stat(dataDir); err != nil {
+		if os.IsNotExist(err) {
+			panic("Datadir does not exist")
+		}
+	} else {
+		if !stats.IsDir() {
+			panic("Datadir is no directory")
+		}
+	}
+
+	socketPath := viper.GetString("SocketPath")
+	if stats, err := os.Stat(socketPath); err != nil {
+		if os.IsNotExist(err) {
+			panic("Socketpath does not exist")
+		}
+	} else {
+		if !stats.IsDir() {
+			panic("Socketpath is no directory")
+		}
+	}
+
 	//////
 	// USERS
 	//////
-	usrRepo, err := authStuff.NewUserRepo(viper.GetString("DataDir"))
+	usrRepo, err := authStuff.NewUserRepo(dataDir)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -93,7 +115,7 @@ func startServer() {
 		panic(err.Error())
 	}
 
-	perms, err := permissions.NewPermissions(viper.GetString("DataDir"))
+	perms, err := permissions.NewPermissions(dataDir)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -101,7 +123,7 @@ func startServer() {
 	//////
 	// BEVERAGES
 	//////
-	br, err := beverages.NewBeverageRepo(viper.GetString("DataDir"))
+	br, err := beverages.NewBeverageRepo(dataDir)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -111,7 +133,7 @@ func startServer() {
 	//////
 	// ACCOUNTS
 	//////
-	acr, err := accounts.NewAccountRepo(viper.GetString("DataDir"))
+	acr, err := accounts.NewAccountRepo(dataDir)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -125,8 +147,8 @@ func startServer() {
 		panic(err.Error())
 	}
 
-	os.Remove(viper.GetString("SocketPath"))
-	admnSrvr, err := admin.NewAdminServer(viper.GetString("SocketPath"), usrRepo, acr, br, perms)
+	os.Remove(socketPath)
+	admnSrvr, err := admin.NewAdminServer(socketPath, usrRepo, acr, br, perms)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -144,5 +166,9 @@ func startServer() {
 	makeLoginRoutes(apiGroup, lc)
 	makeUserUpdateRoutes(floorSpecificGroup, lc)
 
-	log.Fatal(http.ListenAndServe(":"+viper.GetString("Port"), router))
+	portStr := ":" + viper.GetString("Port")
+	if viper.GetInt("Port") <= 0 {
+		panic("Port is not a valid port number")
+	}
+	log.Fatal(http.ListenAndServe(portStr, router))
 }
