@@ -4,12 +4,10 @@ FROM scratch
 WORKDIR /app
 
 # Now just add the binary
-COPY hadibar hadibar
-COPY settings.json settings.json
-COPY webapp webapp
+COPY server admin-client settings.json webapp .
 
 EXPOSE 8080/tcp
 
-ENTRYPOINT ["./hadibar"]
+ENTRYPOINT ["/app/server"]
 VOLUME /app/data
 VOLUME /app/sockets
