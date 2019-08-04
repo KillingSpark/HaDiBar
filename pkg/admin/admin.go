@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/killingspark/hadibar/src/accounts"
-	"github.com/killingspark/hadibar/src/authStuff"
-	"github.com/killingspark/hadibar/src/beverages"
-	"github.com/killingspark/hadibar/src/permissions"
+	"github.com/killingspark/hadibar/pkg/accounts"
+	"github.com/killingspark/hadibar/pkg/authStuff"
+	"github.com/killingspark/hadibar/pkg/beverages"
+	"github.com/killingspark/hadibar/pkg/permissions"
 )
 
 type AdminServer struct {

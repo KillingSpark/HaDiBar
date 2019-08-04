@@ -5,7 +5,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/src/restapi"
+	"github.com/killingspark/hadibar/pkg/restapi"
 )
 
 //LoginController is the controller for the logins

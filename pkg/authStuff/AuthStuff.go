@@ -10,7 +10,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/src/restapi"
+	"github.com/killingspark/hadibar/pkg/restapi"
 )
 
 //LoginInfo is passed into the context if the session has a logged in user

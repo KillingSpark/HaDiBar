@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/src/accounts"
-	"github.com/killingspark/hadibar/src/authStuff"
-	"github.com/killingspark/hadibar/src/beverages"
-	"github.com/killingspark/hadibar/src/restapi"
+	"github.com/killingspark/hadibar/pkg/accounts"
+	"github.com/killingspark/hadibar/pkg/authStuff"
+	"github.com/killingspark/hadibar/pkg/beverages"
+	"github.com/killingspark/hadibar/pkg/restapi"
 )
 
 type ReportsController struct {

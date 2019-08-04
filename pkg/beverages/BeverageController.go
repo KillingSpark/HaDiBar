@@ -8,9 +8,9 @@ import (
 	"github.com/apex/log"
 	"github.com/gin-gonic/gin"
 
-	"github.com/killingspark/hadibar/src/authStuff"
-	"github.com/killingspark/hadibar/src/permissions"
-	"github.com/killingspark/hadibar/src/restapi"
+	"github.com/killingspark/hadibar/pkg/authStuff"
+	"github.com/killingspark/hadibar/pkg/permissions"
+	"github.com/killingspark/hadibar/pkg/restapi"
 )
 
 //BeverageController : Controller for the Beverages
