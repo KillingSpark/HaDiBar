@@ -4,7 +4,7 @@
     "WebAppDir":"webapp/",
     "WebAppRoute":"/app",
     "LoggingLevel":"DEBUG",
-    "SocketPath": "sockets/control.socket",
+    "SocketPath": "sockets",
 
     "LogDir": "logs",
     "LogMaxSize": 100,
