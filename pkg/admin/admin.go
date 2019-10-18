@@ -55,18 +55,17 @@ func NewTlsAdminServer(addr, certPath, keyPath, caCertPath string, tlsClientcert
 	}
 
 	conf := &tls.Config{}
-	cert, err := tls.LoadX509KeyPair("certs/client.pem", "certs/client.key")
-	if err != nil {
-		return nil, err
-	}
-
-	certPEMBlock, err := ioutil.ReadFile(caCertPath)
+	cert, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
 		return nil, err
 	}
 	conf.Certificates = append(conf.Certificates, cert)
 
 	if caCertPath != "" {
+		certPEMBlock, err := ioutil.ReadFile(caCertPath)
+		if err != nil {
+			return nil, err
+		}
 		caCert, err := x509.ParseCertificate(certPEMBlock)
 		if err != nil {
 			return nil, err

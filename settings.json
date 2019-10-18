@@ -6,7 +6,7 @@
     "LoggingLevel":"DEBUG",
     "SocketPath": "",
     "AdminTcpAddr": ":8081",
-    "TlsCertPath": "",
+    "TlsCertPath": "tlsexample/server.crt",
     "TlsKeyPath": "",
     "TlsCaCertPath": "",
     "TlsRequireClientCert": false,

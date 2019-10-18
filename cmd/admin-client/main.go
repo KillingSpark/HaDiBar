@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"net"
 	"os"
@@ -15,6 +16,7 @@ var (
 	app     = kingpin.New("hadibar-admin", "A client for the admin-interface of hadibar")
 	socket  = app.Flag("socket", "The location of the socket file").Short('s').String()
 	tcpaddr = app.Flag("tcpaddr", "The tcp address of the admin-server").Default(":8081").Short('t').String()
+	useTLS  = app.Flag("tls", "use tls").Default("false").Bool()
 
 	delusr     = app.Command("delusr", "Delete a user")
 	delusrName = delusr.Arg("name", "Name of user").Required().String()
@@ -49,7 +51,12 @@ func main() {
 	if *socket != "" {
 		con, err = net.Dial("unix", *socket)
 	} else {
-		con, err = net.Dial("tcp", *tcpaddr)
+		if *useTLS {
+			conf := &tls.Config{InsecureSkipVerify: true}
+			con, err = tls.Dial("tcp", *tcpaddr, conf)
+		} else {
+			con, err = net.Dial("tcp", *tcpaddr)
+		}
 	}
 	if err != nil {
 		panic(err.Error())
