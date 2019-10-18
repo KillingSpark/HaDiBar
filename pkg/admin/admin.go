@@ -152,44 +152,44 @@ func (as *AdminServer) StartAccepting() {
 }
 
 func (as *AdminServer) handleCon(con net.Conn) {
-	for {
-		dec := json.NewDecoder(con)
-		cmd := Command{}
-		err := dec.Decode(&cmd)
-		if err != nil {
-			con.Close()
-			return
-		}
-		switch strings.ToLower(cmd.Type) {
-		case "listusers":
-			lucmd := ListUsersCommand{}
-			io.Copy(con, bytes.NewBuffer(as.listUsers(&lucmd)))
-		case "deleteuser":
-			ducmd := DeleteUserCommand{}
-			json.Unmarshal(cmd.Payload, &ducmd)
-			io.Copy(con, bytes.NewBuffer(as.deleteUser(&ducmd)))
-		case "listbevs":
-			lbcmd := ListBeveragesCommand{}
-			json.Unmarshal(cmd.Payload, &lbcmd)
-			io.Copy(con, bytes.NewBuffer(as.listBevs(&lbcmd)))
-		case "listaccs":
-			lacmd := ListAccountsCommand{}
-			json.Unmarshal(cmd.Payload, &lacmd)
-			io.Copy(con, bytes.NewBuffer(as.listAccs(&lacmd)))
-		case "listtxs":
-			ltxscmd := ListTransactionssCommand{}
-			json.Unmarshal(cmd.Payload, &ltxscmd)
-			io.Copy(con, bytes.NewBuffer(as.listTransactions(&ltxscmd)))
-		case "backup":
-			bkpcmd := PerformBackupCommand{}
-			json.Unmarshal(cmd.Payload, &bkpcmd)
-			io.Copy(con, bytes.NewBuffer(as.doBackup(&bkpcmd)))
-		case "clean":
-			io.Copy(con, bytes.NewBuffer(as.cleanUpOrphaned()))
-		default:
-			log.WithFields(log.Fields{"cmd": strings.ToLower(cmd.Type)}).Warn("Unknown command")
-		}
+	dec := json.NewDecoder(con)
+	cmd := Command{}
+	err := dec.Decode(&cmd)
+	if err != nil {
+		con.Close()
+		return
 	}
+	switch strings.ToLower(cmd.Type) {
+	case "listusers":
+		lucmd := ListUsersCommand{}
+		io.Copy(con, bytes.NewBuffer(as.listUsers(&lucmd)))
+	case "deleteuser":
+		ducmd := DeleteUserCommand{}
+		json.Unmarshal(cmd.Payload, &ducmd)
+		io.Copy(con, bytes.NewBuffer(as.deleteUser(&ducmd)))
+	case "listbevs":
+		lbcmd := ListBeveragesCommand{}
+		json.Unmarshal(cmd.Payload, &lbcmd)
+		io.Copy(con, bytes.NewBuffer(as.listBevs(&lbcmd)))
+	case "listaccs":
+		lacmd := ListAccountsCommand{}
+		json.Unmarshal(cmd.Payload, &lacmd)
+		io.Copy(con, bytes.NewBuffer(as.listAccs(&lacmd)))
+	case "listtxs":
+		ltxscmd := ListTransactionssCommand{}
+		json.Unmarshal(cmd.Payload, &ltxscmd)
+		io.Copy(con, bytes.NewBuffer(as.listTransactions(&ltxscmd)))
+	case "backup":
+		bkpcmd := PerformBackupCommand{}
+		json.Unmarshal(cmd.Payload, &bkpcmd)
+		io.Copy(con, bytes.NewBuffer(as.doBackup(&bkpcmd)))
+	case "clean":
+		io.Copy(con, bytes.NewBuffer(as.cleanUpOrphaned()))
+	default:
+		log.WithFields(log.Fields{"cmd": strings.ToLower(cmd.Type)}).Warn("Unknown command")
+	}
+	con.Close()
+
 }
 
 func (as *AdminServer) listTransactions(cmd *ListTransactionssCommand) []byte {

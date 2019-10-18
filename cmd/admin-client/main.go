@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"io/ioutil"
 	"net"
 	"os"
 
@@ -108,11 +109,12 @@ func writeCommand(line []byte) error {
 		}
 	}
 
-	c, err := con.Read(buf)
+	content, err := ioutil.ReadAll(con)
 	if err != nil {
-		return err
+		panic(err.Error())
 	}
-	json.Indent(pretty, buf[:c], "", "  ")
+
+	json.Indent(pretty, content, "", "  ")
 	println(string(pretty.Bytes()))
 	pretty.Reset()
 	return nil
