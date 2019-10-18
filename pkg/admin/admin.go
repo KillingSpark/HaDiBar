@@ -27,7 +27,7 @@ type AdminServer struct {
 	socketPath string
 }
 
-func NewAdminServer(pathToSocket string, usrRepo *authStuff.UserRepo, accRepo *accounts.AccountRepo, bevRepo *beverages.BeverageRepo, perms *permissions.Permissions) (*AdminServer, error) {
+func NewUnixAdminServer(pathToSocket string, usrRepo *authStuff.UserRepo, accRepo *accounts.AccountRepo, bevRepo *beverages.BeverageRepo, perms *permissions.Permissions) (*AdminServer, error) {
 	as := &AdminServer{}
 	var err error
 	as.lstn, err = net.Listen("unix", pathToSocket)
@@ -42,8 +42,26 @@ func NewAdminServer(pathToSocket string, usrRepo *authStuff.UserRepo, accRepo *a
 	return as, nil
 }
 
+func NewTcpAdminServer(addr string, usrRepo *authStuff.UserRepo, accRepo *accounts.AccountRepo, bevRepo *beverages.BeverageRepo, perms *permissions.Permissions) (*AdminServer, error) {
+	as := &AdminServer{}
+	var err error
+	as.lstn, err = net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	as.ur = usrRepo
+	as.ar = accRepo
+	as.br = bevRepo
+	as.perm = perms
+	return as, nil
+}
+
 func (as *AdminServer) Close() error {
-	return os.Remove(as.socketPath)
+	if as.socketPath != "" {
+		return os.Remove(as.socketPath)
+	} else {
+		return as.lstn.Close()
+	}
 }
 
 type Command struct {

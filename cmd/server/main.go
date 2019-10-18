@@ -92,14 +92,22 @@ func startServer() {
 	}
 
 	socketPath := viper.GetString("SocketPath")
-	if stats, err := os.Stat(socketPath); err != nil {
-		if os.IsNotExist(err) {
-			panic("Socketpath does not exist")
+	if socketPath != "" {
+		if stats, err := os.Stat(socketPath); err != nil {
+			if os.IsNotExist(err) {
+				panic("Socketpath does not exist")
+			}
+		} else {
+			if !stats.IsDir() {
+				panic("Socketpath is no directory")
+			}
 		}
-	} else {
-		if !stats.IsDir() {
-			panic("Socketpath is no directory")
-		}
+	}
+
+	adminTCPAddr := viper.GetString("AdminTcpAddr")
+
+	if adminTCPAddr != "" && socketPath != "" {
+		panic("Only one adminserver should be started")
 	}
 
 	//////
@@ -147,12 +155,22 @@ func startServer() {
 		panic(err.Error())
 	}
 
-	os.Remove(socketPath)
-	admnSrvr, err := admin.NewAdminServer(socketPath, usrRepo, acr, br, perms)
-	if err != nil {
-		panic(err.Error())
+	if socketPath != "" {
+		adminSocketPath := socketPath + "/admin.socket"
+		os.Remove(adminSocketPath)
+		admnSrvr, err := admin.NewUnixAdminServer(adminSocketPath, usrRepo, acr, br, perms)
+		if err != nil {
+			panic(err.Error())
+		}
+		go admnSrvr.StartAccepting()
 	}
-	go admnSrvr.StartAccepting()
+	if adminTCPAddr != "" {
+		admnSrvr, err := admin.NewTcpAdminServer(adminTCPAddr, usrRepo, acr, br, perms)
+		if err != nil {
+			panic(err.Error())
+		}
+		go admnSrvr.StartAccepting()
+	}
 
 	//router.Use(sessMan.CheckSession)
 	apiGroup := router.Group("/api")

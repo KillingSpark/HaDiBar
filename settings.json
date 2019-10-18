@@ -4,7 +4,8 @@
     "WebAppDir":"webapp/",
     "WebAppRoute":"/app",
     "LoggingLevel":"DEBUG",
-    "SocketPath": "sockets",
+    "SocketPath": "",
+    "AdminTcpAddr": ":8081",
 
     "LogDir": "logs",
     "LogMaxSize": 100,

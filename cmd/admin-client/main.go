@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	app    = kingpin.New("hadibar-admin", "A client for the admin-interface of hadibar")
-	socket = app.Flag("socket", "The location of the socket file").Default("./control.socket").Short('s').String()
+	app     = kingpin.New("hadibar-admin", "A client for the admin-interface of hadibar")
+	socket  = app.Flag("socket", "The location of the socket file").Short('s').String()
+	tcpaddr = app.Flag("tcpaddr", "The tcp address of the admin-server").Default(":8081").Short('t').String()
 
 	delusr     = app.Command("delusr", "Delete a user")
 	delusrName = delusr.Arg("name", "Name of user").Required().String()
@@ -44,7 +45,12 @@ func main() {
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	var err error
-	con, err = net.Dial("unix", *socket)
+
+	if *socket != "" {
+		con, err = net.Dial("unix", *socket)
+	} else {
+		con, err = net.Dial("tcp", *tcpaddr)
+	}
 	if err != nil {
 		panic(err.Error())
 	}
