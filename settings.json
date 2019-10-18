@@ -6,6 +6,10 @@
     "LoggingLevel":"DEBUG",
     "SocketPath": "",
     "AdminTcpAddr": ":8081",
+    "TlsCertPath": "",
+    "TlsKeyPath": "",
+    "TlsCaCertPath": "",
+    "TlsRequireClientCert": false,
 
     "LogDir": "logs",
     "LogMaxSize": 100,

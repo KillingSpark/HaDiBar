@@ -105,6 +105,10 @@ func startServer() {
 	}
 
 	adminTCPAddr := viper.GetString("AdminTcpAddr")
+	adminTLSCertPath := viper.GetString("TlsCertPath")
+	adminTLSKeyPath := viper.GetString("TlsKeyPath")
+	adminTLSCaCertPath := viper.GetString("TlsCaCertPath")
+	adminTLSClientCertReq := viper.GetBool("TlsRequireClientCert")
 
 	if adminTCPAddr != "" && socketPath != "" {
 		panic("Only one adminserver should be started")
@@ -165,11 +169,20 @@ func startServer() {
 		go admnSrvr.StartAccepting()
 	}
 	if adminTCPAddr != "" {
-		admnSrvr, err := admin.NewTcpAdminServer(adminTCPAddr, usrRepo, acr, br, perms)
-		if err != nil {
-			panic(err.Error())
+		if adminTLSKeyPath != "" {
+			admnSrvr, err := admin.NewTlsAdminServer(adminTCPAddr, adminTLSCertPath, adminTLSKeyPath, adminTLSCaCertPath, adminTLSClientCertReq, usrRepo, acr, br, perms)
+			if err != nil {
+				panic(err.Error())
+			}
+			go admnSrvr.StartAccepting()
+		} else {
+			admnSrvr, err := admin.NewTcpAdminServer(adminTCPAddr, usrRepo, acr, br, perms)
+			if err != nil {
+				panic(err.Error())
+			}
+			go admnSrvr.StartAccepting()
 		}
-		go admnSrvr.StartAccepting()
+
 	}
 
 	//router.Use(sessMan.CheckSession)
