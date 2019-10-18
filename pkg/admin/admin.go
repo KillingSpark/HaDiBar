@@ -2,8 +2,11 @@ package admin
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -42,13 +45,57 @@ func NewUnixAdminServer(pathToSocket string, usrRepo *authStuff.UserRepo, accRep
 	return as, nil
 }
 
+func NewTlsAdminServer(addr, certPath, keyPath, caCertPath string, tlsClientcertRequired bool, usrRepo *authStuff.UserRepo, accRepo *accounts.AccountRepo, bevRepo *beverages.BeverageRepo, perms *permissions.Permissions) (*AdminServer, error) {
+	as := &AdminServer{}
+	var err error
+
+	tcpLstn, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	conf := &tls.Config{}
+	cert, err := tls.LoadX509KeyPair("certs/client.pem", "certs/client.key")
+	if err != nil {
+		return nil, err
+	}
+
+	certPEMBlock, err := ioutil.ReadFile(caCertPath)
+	if err != nil {
+		return nil, err
+	}
+	conf.Certificates = append(conf.Certificates, cert)
+
+	if caCertPath != "" {
+		caCert, err := x509.ParseCertificate(certPEMBlock)
+		if err != nil {
+			return nil, err
+		}
+		conf.RootCAs.AddCert(caCert)
+	}
+
+	if tlsClientcertRequired {
+		conf.ClientAuth = tls.RequireAndVerifyClientCert
+	}
+
+	as.lstn = tls.NewListener(tcpLstn, conf)
+
+	as.ur = usrRepo
+	as.ar = accRepo
+	as.br = bevRepo
+	as.perm = perms
+	return as, nil
+}
+
 func NewTcpAdminServer(addr string, usrRepo *authStuff.UserRepo, accRepo *accounts.AccountRepo, bevRepo *beverages.BeverageRepo, perms *permissions.Permissions) (*AdminServer, error) {
 	as := &AdminServer{}
 	var err error
+
 	as.lstn, err = net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
+
 	as.ur = usrRepo
 	as.ar = accRepo
 	as.br = bevRepo
