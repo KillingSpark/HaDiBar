@@ -6,13 +6,13 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/killingspark/hadibar/src/accounts"
-	"github.com/killingspark/hadibar/src/admin"
-	"github.com/killingspark/hadibar/src/authStuff"
-	"github.com/killingspark/hadibar/src/beverages"
-	"github.com/killingspark/hadibar/src/logger"
-	"github.com/killingspark/hadibar/src/permissions"
-	"github.com/killingspark/hadibar/src/reports"
+	"github.com/killingspark/hadibar/pkg/accounts"
+	"github.com/killingspark/hadibar/pkg/admin"
+	"github.com/killingspark/hadibar/pkg/authStuff"
+	"github.com/killingspark/hadibar/pkg/beverages"
+	"github.com/killingspark/hadibar/pkg/logger"
+	"github.com/killingspark/hadibar/pkg/permissions"
+	"github.com/killingspark/hadibar/pkg/reports"
 
 	"github.com/spf13/viper"
 )

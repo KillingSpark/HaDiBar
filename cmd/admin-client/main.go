@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/killingspark/hadibar/src/admin"
+	"github.com/killingspark/hadibar/pkg/admin"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )

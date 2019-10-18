@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/killingspark/hadibar/src/permissions"
+	"github.com/killingspark/hadibar/pkg/permissions"
 )
 
 //BeverageService handles the persistence of beverages for us
