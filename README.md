@@ -28,16 +28,20 @@ Testlogin:
 ```
 
 ## Admin Server
-Besides the rest-api for the normal users there is an additional admin-server listening on a unix socket.
+Besides the rest-api for the normal users there is an additional admin-server. It can listen on either
+1. A unix socket
+2. A tcp socket
+3. A tls socket (requires keys provided by you)
 
-The admin-server uses a JSON based PRC that allows to manage all things. There is support for 
+The admin-server uses a JSON based RPC that allows to manage all things. There is support for 
 1. listing/removing users
 1. perform cleanup after deleting users
 1. listing accounts
 1. listing beverages
 1. perform backups
 
-The most comfortable way is probably to use the admin-client in the cmd directory
+The most comfortable way is probably to use the admin-client in the cmd directory. It is has support for unix-socket/tcp/tls but is not
+yet able to identify itself with it's own certificate. The whole 'adding a CA' to the admin server is not tested yet but should work.
 
 Example for performing backups and put them in a directory with the current date
 
