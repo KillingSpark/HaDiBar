@@ -7,8 +7,8 @@
     "SocketPath": "",
     "AdminTcpAddr": ":8081",
     "TlsCertPath": "tlsexample/server.crt",
-    "TlsKeyPath": "",
-    "TlsCaCertPath": "",
+    "TlsKeyPath": "tlsexample/server.key",
+    "TlsCaCertPath": "tlsexample/ca-root.crt",
     "TlsRequireClientCert": false,
 
     "LogDir": "logs",

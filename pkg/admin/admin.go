@@ -70,6 +70,7 @@ func NewTlsAdminServer(addr, certPath, keyPath, caCertPath string, tlsClientcert
 		if err != nil {
 			return nil, err
 		}
+		conf.RootCAs = x509.NewCertPool()
 		conf.RootCAs.AddCert(caCert)
 	}
 
