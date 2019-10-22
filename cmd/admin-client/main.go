@@ -18,6 +18,8 @@ var (
 	socket  = app.Flag("socket", "The location of the socket file").Short('s').String()
 	tcpaddr = app.Flag("tcpaddr", "The tcp address of the admin-server").Default(":8081").Short('t').String()
 	useTLS  = app.Flag("tls", "use tls").Default("false").Bool()
+	cert    = app.Flag("cert", "Certificate to use to identify client against the server").String()
+	key     = app.Flag("key", "Key to use to identify client against the server").String()
 
 	delusr     = app.Command("delusr", "Delete a user")
 	delusrName = delusr.Arg("name", "Name of user").Required().String()
@@ -54,7 +56,16 @@ func main() {
 	} else {
 		if *useTLS {
 			conf := &tls.Config{InsecureSkipVerify: true}
+			cert, err := tls.LoadX509KeyPair(*cert, *key)
+			if err != nil {
+				panic(err.Error())
+			}
+			conf.Certificates = []tls.Certificate{cert}
+
 			con, err = tls.Dial("tcp", *tcpaddr, conf)
+			if err != nil {
+				panic(err.Error())
+			}
 		} else {
 			con, err = net.Dial("tcp", *tcpaddr)
 		}

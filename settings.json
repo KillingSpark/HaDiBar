@@ -8,8 +8,8 @@
     "AdminTcpAddr": ":8081",
     "TlsCertPath": "tlsexample/server.crt",
     "TlsKeyPath": "tlsexample/server.key",
-    "TlsCaCertPath": "tlsexample/ca-root.crt",
-    "TlsRequireClientCert": false,
+    "TlsCaCertPath": "tlsexample/ca-root.pem",
+    "TlsRequireClientCert": true,
 
     "LogDir": "logs",
     "LogMaxSize": 100,

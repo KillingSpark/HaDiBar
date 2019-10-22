@@ -66,12 +66,11 @@ func NewTlsAdminServer(addr, certPath, keyPath, caCertPath string, tlsClientcert
 		if err != nil {
 			return nil, err
 		}
-		caCert, err := x509.ParseCertificate(certPEMBlock)
-		if err != nil {
-			return nil, err
-		}
 		conf.RootCAs = x509.NewCertPool()
-		conf.RootCAs.AddCert(caCert)
+		if !conf.RootCAs.AppendCertsFromPEM(certPEMBlock) {
+			panic("Couldnt load CA pem")
+		}
+		conf.ClientCAs = conf.RootCAs
 	}
 
 	if tlsClientcertRequired {
