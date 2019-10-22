@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"io/ioutil"
 	"net"
@@ -14,12 +15,14 @@ import (
 )
 
 var (
-	app     = kingpin.New("hadibar-admin", "A client for the admin-interface of hadibar")
-	socket  = app.Flag("socket", "The location of the socket file").Short('s').String()
-	tcpaddr = app.Flag("tcpaddr", "The tcp address of the admin-server").Default(":8081").Short('t').String()
-	useTLS  = app.Flag("tls", "use tls").Default("false").Bool()
-	cert    = app.Flag("cert", "Certificate to use to identify client against the server").String()
-	key     = app.Flag("key", "Key to use to identify client against the server").String()
+	app        = kingpin.New("hadibar-admin", "A client for the admin-interface of hadibar")
+	socket     = app.Flag("socket", "The location of the socket file").Short('s').String()
+	tcpaddr    = app.Flag("tcpaddr", "The tcp address of the admin-server").Default(":8081").Short('t').String()
+	useTLS     = app.Flag("tls", "use tls").Default("false").Bool()
+	cert       = app.Flag("cert", "Certificate to use to identify client against the server").String()
+	key        = app.Flag("key", "Key to use to identify client against the server").String()
+	cacert     = app.Flag("cacert", "Public cert for ca to check the servers certificate").String()
+	servername = app.Flag("servername", "Servername if none given in tcpaddr").String()
 
 	delusr     = app.Command("delusr", "Delete a user")
 	delusrName = delusr.Arg("name", "Name of user").Required().String()
@@ -55,7 +58,20 @@ func main() {
 		con, err = net.Dial("unix", *socket)
 	} else {
 		if *useTLS {
-			conf := &tls.Config{InsecureSkipVerify: true}
+			conf := &tls.Config{}
+			if *cacert == "" {
+				conf.InsecureSkipVerify = true
+			} else {
+				certPEMBlock, err := ioutil.ReadFile(*cacert)
+				if err != nil {
+					panic(err.Error())
+				}
+				conf.RootCAs = x509.NewCertPool()
+				if !conf.RootCAs.AppendCertsFromPEM(certPEMBlock) {
+					panic("Couldnt load CA pem")
+				}
+				conf.ServerName = *servername
+			}
 			cert, err := tls.LoadX509KeyPair(*cert, *key)
 			if err != nil {
 				panic(err.Error())

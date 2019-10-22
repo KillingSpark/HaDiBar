@@ -48,3 +48,22 @@ Example for performing backups and put them in a directory with the current date
 ```
 go run src/cmd/admin-client/main.go -s sockets/control.socket backup "backups/$(date -u +"%Y-%m-%d__%H:%M:%S")"
 ```
+
+
+Example of how to use the client if all tls options are enabled:
+1. Client certificate required
+2. Check server certificate against own root-ca
+3. custom servername (needed if your server only runs on an ip or on localhost not on an actual domain)
+
+```
+go run cmd/admin-client/main.go --tls lsusrs --cert tlsexample/zertifikat-pub.pem --key tlsexample/zertifikat-key.pem --cacert tlsexample/ca-root.pem --servername test-server.test
+```
+
+## Generate your own CA for the server/client
+* generate CA private key: openssl genrsa -out ca-key.pem 2048
+* generate CA public cert: openssl req -x509 -new -nodes -extensions v3_ca -key ca-key.pem -days 1024 -out ca-root.pem -sha512
+
+## Generate new certs for the server/client
+* create key:               openssl genrsa -out server-key.pem 4096
+* create signing request:   openssl req -new -key server-key.pem -out server.csr -sha51
+* create cert:              openssl x509 -req -in server.csr -CA ca-root.pem -CAkey ca-key.pem -CAcreateserial -out server-pub.pem -days 365 -sha512

@@ -6,8 +6,8 @@
     "LoggingLevel":"DEBUG",
     "SocketPath": "",
     "AdminTcpAddr": ":8081",
-    "TlsCertPath": "tlsexample/server.crt",
-    "TlsKeyPath": "tlsexample/server.key",
+    "TlsCertPath": "tlsexample/server-pub.pem",
+    "TlsKeyPath": "tlsexample/server-key.pem",
     "TlsCaCertPath": "tlsexample/ca-root.pem",
     "TlsRequireClientCert": true,
 
