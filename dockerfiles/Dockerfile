@@ -8,6 +8,8 @@ COPY server admin-client settings.json webapp /app/
 
 EXPOSE 8080/tcp
 
+ENV GIN_MODE=release
+
 ENTRYPOINT ["/app/server"]
 VOLUME /app/data
 VOLUME /app/sockets
