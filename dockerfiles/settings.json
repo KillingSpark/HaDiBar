@@ -1,0 +1,11 @@
+{
+    "DataDir":"/data",
+    "WebAppDir":"webapp/",
+    "WebAppRoute":"/app",
+
+    "LogDir": "/logs",
+    "LogMaxSize": 100,
+    "LogMaxAge": 30,
+    "LogMaxBackups": 12,
+    "LogCompress": false
+}
