@@ -4,7 +4,8 @@ FROM scratch
 WORKDIR /app
 
 # Now just add the binary
-COPY server admin-client settings.json webapp /app/
+COPY server admin-client settings.json /app/
+COPY webapp/ /app/webapp/
 
 EXPOSE 8080/tcp
 
