@@ -62,6 +62,10 @@ func main() {
 	viper.AddConfigPath("$HOME/.config/hadibar/")
 	viper.AddConfigPath("/etc/hadibar")
 	viper.SetConfigName("settings")
+
+	viper.SetEnvPrefix("hadibar")
+	viper.AutomaticEnv()
+
 	viper.ReadInConfig()
 
 	logger.PrepareLoggerFromViper()
