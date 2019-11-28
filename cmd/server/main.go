@@ -81,7 +81,7 @@ func startServer() {
 
 	//redirect users from / to /app
 	router.GET("/", func(ctx *gin.Context) {
-		ctx.Redirect(300, viper.GetString("WebAppRoute"))
+		ctx.Redirect(302, viper.GetString("WebAppRoute"))
 	})
 
 	dataDir := viper.GetString("DataDir")
