@@ -126,7 +126,7 @@ func (ar *AccountRepo) DeleteInstance(accID string) error {
 }
 
 func getPageName(t *time.Time) string {
-	return strconv.Itoa(t.Year()) + "-" + t.Month().String()
+	return strconv.Itoa(t.Year()) + "-" + strconv.Itoa(int(t.Month()))
 }
 
 func (ar *AccountRepo) SaveTransaction(trans *Transaction) error {
@@ -173,7 +173,6 @@ func (ar *AccountRepo) GetTransactionsPages(from, to *time.Time) ([]*Transaction
 		b := tx.Bucket([]byte(bucketNameTrans))
 		c := b.Cursor()
 		for pageName, _ := c.First(); pageName != nil; pageName, _ = c.Next() {
-			println(string(pageName))
 			if strings.Compare(string(pageName), lastpagename) > 0 {
 				break
 			}
@@ -192,7 +191,11 @@ func (ar *AccountRepo) GetTransactionsPages(from, to *time.Time) ([]*Transaction
 				if err != nil {
 					continue //skip invalied entries. maybe implement cleanup...
 				}
-				res = append(res, trans)
+				
+
+				if (from==nil || (from != nil && trans.Timestamp.After(*from))) && (to == nil || (to != nil && trans.Timestamp.Before(*to))) {
+					res = append(res, trans)
+				}
 			}
 		}
 		return nil
