@@ -141,6 +141,16 @@ func writeCommand(line []byte) error {
 		panic(err.Error())
 	}
 
+	if len(content) > 2 {
+		response := admin.ErrorResponse{}
+		err = json.Unmarshal(content, &response)
+		if err != nil {
+			panic(err.Error())
+		}
+		if response.Result == "Err" {
+			panic("Error from server: " + response.Text)
+		}
+	}
 	json.Indent(pretty, content, "", "  ")
 	println(string(pretty.Bytes()))
 	pretty.Reset()
