@@ -1,0 +1,4 @@
+FROM alpine:3
+
+# Add the binary to directory in PATH
+COPY admin-client /usr/local/bin/
