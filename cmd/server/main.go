@@ -68,7 +68,12 @@ func main() {
 
 	viper.ReadInConfig()
 
-	logger.PrepareLoggerFromViper()
+	
+	if err := logger.PrepareLoggerFromViper() 
+	err != nil {
+		panic("Could not setup logger: " + err.Error())
+	}
+	
 
 	startServer()
 }

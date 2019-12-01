@@ -12,25 +12,64 @@ import (
 	"github.com/spf13/viper"
 )
 
+func PrepareFallbackLogger() {
+	if viper.GetString("FallbackLogger") == "Stderr" {
+		PrepareLoggerStderr()
+	}else{
+		PrepareLoggerStdout()
+	}
+}
+
 func PrepareLoggerStdout() {
-	log.SetLevel(log.DebugLevel)
+	setLogLevel()
+	log.SetHandler(text.New(os.Stdout))
+}
+
+func PrepareLoggerStderr() {
+	setLogLevel()
 	log.SetHandler(text.New(os.Stderr))
 }
 
-func PrepareLoggerFromViper() error {
-	logdir := viper.GetString("LogDir")
-	size := viper.GetInt("LogMaxSize")
-	bkps := viper.GetInt("LogMaxBackups")
-	age := viper.GetInt("LogMaxAge")
-	cmprss := viper.GetBool("LogCompress")
+func setLogLevel() {
+	level := viper.GetString("LoggingLevel")
+	switch level {
+		case "DEBUG": log.SetLevel(log.DebugLevel)
+		case "INFO": log.SetLevel(log.InfoLevel)
+		case "WARN": log.SetLevel(log.WarnLevel)
+		case "ERROR": log.SetLevel(log.ErrorLevel)
+		case "FATAL": log.SetLevel(log.FatalLevel)
+		default: log.SetLevel(log.WarnLevel)
+	}
+}
 
-	return PrepareLogger(logdir, size, age, bkps, cmprss)
+func PrepareLoggerFromViper() error {
+	if viper.GetString("Logger") == "Lumberjack" {
+		logdir := viper.GetString("LogDir")
+		size := viper.GetInt("LogMaxSize")
+		bkps := viper.GetInt("LogMaxBackups")
+		age := viper.GetInt("LogMaxAge")
+		cmprss := viper.GetBool("LogCompress")
+	
+		err := PrepareLogger(logdir, size, age, bkps, cmprss)
+		if err != nil {
+			PrepareFallbackLogger()
+			return err
+		}
+	} else {
+		PrepareFallbackLogger()
+	}
+	return nil
 }
 
 func PrepareLogger(logdir string, size, backups, age int, compress bool) error {
 	if logdir == "" {
 		return errors.New("No logdir given")
 	}
+	_, err := os.Stat(logdir) 
+	if err != nil {
+		os.MkdirAll(logdir, 0666)
+	}
+
 	if size == 0 {
 		return errors.New("No maxsize given")
 	}
@@ -38,7 +77,7 @@ func PrepareLogger(logdir string, size, backups, age int, compress bool) error {
 		return errors.New("No maxage given")
 	}
 
-	log.SetLevel(log.DebugLevel)
+	setLogLevel()
 	log.SetHandler(logfmt.New(&lumberjack.Logger{
 		Filename:   path.Join(logdir, "hadibar.log"),
 		MaxSize:    size,
