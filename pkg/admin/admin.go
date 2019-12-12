@@ -32,8 +32,8 @@ type AdminServer struct {
 
 // `{"Result": "Err", "Text":"` + err.Error() + `"}`
 type ErrorResponse struct {
-	Result  string `json:"Result"`
-	Text    string `json:"Text"`
+	Result string `json:"Result"`
+	Text   string `json:"Text"`
 }
 
 func NewUnixAdminServer(pathToSocket string, usrRepo *authStuff.UserRepo, accRepo *accounts.AccountRepo, bevRepo *beverages.BeverageRepo, perms *permissions.Permissions) (*AdminServer, error) {
@@ -314,7 +314,6 @@ func (as *AdminServer) cleanUpOrphaned() []byte {
 func (as *AdminServer) deleteUser(cmd *DeleteUserCommand) []byte {
 	log.WithFields(log.Fields{"cmd": "deleteuser", "name": cmd.Name}).Debug("Command received")
 
-	println("delete: " + cmd.Name)
 	err := as.ur.DeleteInstance(cmd.Name)
 	if err != nil {
 		result := ErrorResponse{Result: "Err", Text: err.Error()}
@@ -322,7 +321,6 @@ func (as *AdminServer) deleteUser(cmd *DeleteUserCommand) []byte {
 		return marshalled
 	}
 	as.perm.RemoveUsersPermissions(cmd.Name)
-	println("deleted: " + cmd.Name)
 	return []byte(`{"Result": "OK"}`)
 }
 

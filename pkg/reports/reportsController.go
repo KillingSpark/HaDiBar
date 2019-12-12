@@ -188,7 +188,6 @@ func (rc *ReportsController) GenerateTransactionList(ctx *gin.Context) {
 		if !ok {
 			acc, err := rc.accsrv.GetAccount(tx.TargetID, info.Name)
 			if err != nil {
-				println(err.Error())
 				continue
 			}
 			idMap[tx.TargetID] = acc.Owner.Name
