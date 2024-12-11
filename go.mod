@@ -13,7 +13,7 @@ require (
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/spf13/viper v1.2.1
-	golang.org/x/crypto v0.17.0
+	golang.org/x/crypto v0.31.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
